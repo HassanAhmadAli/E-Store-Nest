@@ -1,5 +1,4 @@
 import { Roles } from "generated/prisma";
-import { createZodDto } from "nestjs-zod";
 import { z } from "zod/v4";
 export const ActiveUserSchema = z.object({
   sub: z.number(),

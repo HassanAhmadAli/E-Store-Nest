@@ -10,7 +10,7 @@ import { RedisModule } from "@/redis/redis.module";
 import { ProductModule } from "@/product/product.module";
 import { TimeoutInterceptor } from "@/common/interceptors/timeout.interceptor";
 import { IdentityAndAccessManagementModule } from "@/iam/iam.module";
-import { FibModule } from './fib/fib.module';
+import { FibModule } from "./fib/fib.module";
 @Module({
   imports: [
     ConfigModule.forRoot({

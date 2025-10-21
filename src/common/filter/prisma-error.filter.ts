@@ -29,11 +29,10 @@ export class PrismaServerErrorFilter extends BaseExceptionFilter {
         const cause = exception.meta?.cause || "Record not found";
         return super.catch(new NotFoundException(cause), host);
       }
-      default:
-        {
-          pino.error({ prismaException: exception });
-          return super.catch(new BadRequestException(`Prisma Validation Error`), host);
-        }
+      default: {
+        pino.error({ prismaException: exception });
+        return super.catch(new BadRequestException(`Prisma Validation Error`), host);
+      }
     }
   }
 }

@@ -16,7 +16,7 @@ export class PermissionsGuard implements CanActivate {
     if (contextPermissions == undefined) {
       return true;
     }
-    const user = context.switchToHttp().getRequest<RequestWithActiveUser>()[Keys.User];
+    const _user = context.switchToHttp().getRequest<RequestWithActiveUser>()[Keys.User];
     //todo: implement
     return true;
   }
