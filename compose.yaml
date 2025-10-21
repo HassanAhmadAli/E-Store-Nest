@@ -1,0 +1,17 @@
+services:
+  db:
+    image: postgres
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_PASSWORD: pass123
+  db3:
+    image: redis
+    ports:
+      - 6379:6379
+    restart: always
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+volumes:
+  redis-data:

@@ -1,0 +1,44 @@
+import { Body, Controller, HttpCode, HttpStatus, Post, Res } from "@nestjs/common";
+import type { Response } from "express";
+import { SigninDto } from "./dto/signin.dto";
+import { SignupDto } from "./dto/signinup.dto";
+import { AuthenticationService } from "./authentication.service";
+import { Public } from "@/common/decorators/public.decorator";
+import { RefreshTokenDto } from "./dto/refresh-token.dto";
+import { SignoutDto } from "./dto/signout.dto";
+@Public()
+@Controller("authentication")
+export class AuthenticationController {
+  constructor(private readonly authenticationService: AuthenticationService) {}
+  @HttpCode(HttpStatus.OK)
+  @Post("signin")
+  async signin(@Body() signinDto: SigninDto, @Res({ passthrough: true }) res: Response) {
+    const { accessToken: jwt, refreshToken } = await this.authenticationService.signIn(signinDto);
+    res.cookie("accessToken", jwt, {
+      secure: true,
+      httpOnly: true,
+      sameSite: true,
+    });
+    res.cookie("refreshToken", refreshToken, {
+      secure: true,
+      httpOnly: true,
+      sameSite: true,
+    });
+    res.json({ accessToken: jwt, refreshToken });
+  }
+  @Post("signup")
+  async signup(@Body() signUpDto: SignupDto) {
+    const user = await this.authenticationService.signUP(signUpDto);
+    return user;
+  }
+  @HttpCode(HttpStatus.OK)
+  @Post("refresh-tokens")
+  refreshTokens(@Body() refreshTokensDto: RefreshTokenDto) {
+    return this.authenticationService.refreshTokens(refreshTokensDto);
+  }
+  @HttpCode(HttpStatus.OK)
+  @Post("signout")
+  signout(@Body() signoutDto: SignoutDto) {
+    return this.authenticationService.signout(signoutDto);
+  }
+}
