@@ -19,5 +19,5 @@ export const AuthTypes = {
   BEARER: "Bearer",
   NONE: "None",
 } as const;
-export type AuthType = (typeof AuthTypes)[keyof typeof AuthTypes];
-export type Role = (typeof Roles)[keyof typeof Roles];
+export type AuthType = ValueOf<typeof AuthTypes>
+export type Role = ValueOf<typeof Roles>
