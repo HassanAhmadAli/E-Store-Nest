@@ -28,8 +28,33 @@ enum Roles {
 }
 
 model User {
-  id       Int    @id @default(autoincrement())
-  email    String @unique
+  id       Int       @id @default(autoincrement())
+  email    String    @unique
   password String
-  role     Roles  @default(Regular)
+  role     Roles     @default(Regular)
+  Comment  Comment[] // auto added
+}
+
+model Geo {
+  id  Int    @id @default(autoincrement())
+  lat String
+  lng String
+}
+
+model Address {
+  id      Int    @id @default(autoincrement())
+  street  String
+  suite   String
+  city    String
+  zipcode String
+}
+
+model Comment {
+  id          Int      @id @default(autoincrement())
+  text        String
+  commenter   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date        DateTime @default(now())
+  email       String
+  subComments Int[] //this one should be linked to the comment model itself
+  userId      Int
 }
