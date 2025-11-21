@@ -1,5 +1,5 @@
 import { ConflictException, Inject, Injectable, UnauthorizedException } from "@nestjs/common";
-import { HashingService } from "../hashing/hashing.service";
+import { HashingService } from "@/iam/hashing/hashing.service";
 import { SignupDto } from "./dto/signinup.dto";
 import { SigninDto } from "./dto/signin.dto";
 import { JwtService, JwtSignOptions } from "@nestjs/jwt";
@@ -14,12 +14,12 @@ import {
 } from "./dto/request-user.dto";
 import { randomUUID } from "node:crypto";
 import { RefreshTokenIdsStorage } from "./refresh-token-ids.storage";
-import { PrismaService } from "@/prisma/prisma.service";
+import { Prisma, PrismaService } from "@/prisma";
 import { ErrorMessages } from "@/common/const";
 import { ConfigService } from "@nestjs/config";
 import { EnvVariables } from "@/common/schema/env";
 import { SignoutDto } from "./dto/signout.dto";
-import { PrismaClientKnownRequestError } from "generated/prisma/runtime/library";
+
 @Injectable()
 export class AuthenticationService {
   JWT_TTL!: DurationType;
@@ -53,7 +53,7 @@ export class AuthenticationService {
         },
       });
     } catch (e) {
-      if (e instanceof PrismaClientKnownRequestError && e.code === "P2002") {
+      if (e instanceof Prisma.PrismaClientUnknownRequestError && e.code === "P2002") {
         throw new ConflictException(ErrorMessages.EMAIL_ALREADY_EXIST);
       }
       throw e;

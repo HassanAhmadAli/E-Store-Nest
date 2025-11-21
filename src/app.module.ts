@@ -1,21 +1,32 @@
 import { ZodValidationPipe, ZodSerializerInterceptor } from "nestjs-zod";
 import { APP_PIPE, APP_INTERCEPTOR } from "@nestjs/core";
 import { Module } from "@nestjs/common";
-import { ConfigModule } from "@nestjs/config";
-import { validateEnv } from "@/common/schema/env";
-import { envFilePath } from "@/common/const";
+import { ConfigModule, ConfigService } from "@nestjs/config";
+import { EnvVariables, validateEnv } from "@/common/schema/env";
 import { CommonModule } from "@/common/common.module";
 import { PrismaModule } from "@/prisma/prisma.module";
-import { RedisModule } from "@/redis/redis.module";
 import { ProductModule } from "@/product/product.module";
 import { TimeoutInterceptor } from "@/common/interceptors/timeout.interceptor";
 import { IdentityAndAccessManagementModule } from "@/iam/iam.module";
-import { FibModule } from "./fib/fib.module";
+import { DevtoolsModule } from "@nestjs/devtools-integration";
+import { CacheModule } from "@nestjs/cache-manager";
+import KeyvRedis from "@keyv/redis";
 @Module({
   imports: [
+    CacheModule.registerAsync({
+      isGlobal: true,
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService<EnvVariables>) => ({
+        ttl: 5 * 1000,
+        stores: [new KeyvRedis(configService.getOrThrow("REDIS_DATABASE_URL", { infer: true }), {})],
+      }),
+    }),
+    DevtoolsModule.register({
+      http: true,
+    }),
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: envFilePath,
       load: [
         () => {
           return validateEnv(process.env);
@@ -25,10 +36,8 @@ import { FibModule } from "./fib/fib.module";
     }),
     CommonModule,
     PrismaModule,
-    RedisModule,
     ProductModule,
     IdentityAndAccessManagementModule,
-    FibModule,
   ],
   controllers: [],
   providers: [

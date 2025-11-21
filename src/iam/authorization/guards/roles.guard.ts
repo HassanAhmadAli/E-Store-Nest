@@ -1,9 +1,9 @@
-import { Keys, Role } from "@/common/const";
+import { Keys } from "@/common/const";
 import { RequestWithActiveUser } from "@/iam/decorators/ActiveUser.decorator";
-import { PrismaService } from "@/prisma/prisma.service";
+import { PrismaService } from "@/prisma";
 import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
-
+import { Roles } from "@/prisma";
 @Injectable()
 export class RolesGuard implements CanActivate {
   constructor(
@@ -11,7 +11,7 @@ export class RolesGuard implements CanActivate {
     private readonly prisma: PrismaService,
   ) {}
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const allowedRoles = this.reflector.getAllAndOverride<Role[]>(Keys.Permissions, [
+    const allowedRoles = this.reflector.getAllAndOverride<Roles[]>(Keys.Permissions, [
       context.getHandler(),
       context.getClass(),
     ]);

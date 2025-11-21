@@ -1,13 +1,16 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { CreateProductDto } from "./dto/create-product.dto";
 import { UpdateProductDto } from "./dto/update-product.dto";
 import { PaginationQueryDto } from "@/common/dto/pagination-query.dto";
-import { PrismaService } from "@/prisma/prisma.service";
-import { Prisma } from "generated/prisma";
+import { PrismaService, PrismaClientKnownRequestError } from "@/prisma";
+import { CACHE_MANAGER, Cache } from "@nestjs/cache-manager";
 
 @Injectable()
 export class ProductService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+  ) {}
   async create(createProductDto: CreateProductDto) {
     const { name, brand } = createProductDto;
 
@@ -48,7 +51,7 @@ export class ProductService {
         data: updateProductDto,
       });
     } catch (error: unknown) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+      if (error instanceof PrismaClientKnownRequestError && error.code === "P2025") {
         throw new NotFoundException(`Product #${id} not found`);
       }
       throw error;

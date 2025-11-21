@@ -1,6 +1,3 @@
-import { Roles } from "generated/prisma";
-
-export const envFilePath = [".env"];
 export const Keys = {
   Auth: Symbol("Auth_Key"),
   Roles: Symbol("Roles_Key"),
@@ -19,5 +16,4 @@ export const AuthTypes = {
   BEARER: "Bearer",
   NONE: "None",
 } as const;
-export type AuthType = ValueOf<typeof AuthTypes>
-export type Role = ValueOf<typeof Roles>
+export type AuthTypes = ValueOf<typeof AuthTypes>;

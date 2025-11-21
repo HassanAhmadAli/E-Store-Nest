@@ -1,9 +1,10 @@
 import { NestFactory } from "@nestjs/core";
-import { AppModule } from "./app.module";
+import { AppModule } from "@/app.module";
 import { ConfigService } from "@nestjs/config";
-import { EnvVariables } from "./common/schema/env";
+import { EnvVariables } from "@/common/schema/env";
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
+    snapshot: true,
     logger: ["debug", "error", "fatal", "log", "verbose", "warn"],
   });
   const config = app.get(ConfigService<EnvVariables>);

@@ -1,4 +1,4 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, Res } from "@nestjs/common";
+import { Body, Controller, HttpCode, HttpStatus, Post, Res, UseInterceptors } from "@nestjs/common";
 import type { Response } from "express";
 import { SigninDto } from "./dto/signin.dto";
 import { SignupDto } from "./dto/signinup.dto";
@@ -12,19 +12,9 @@ export class AuthenticationController {
   constructor(private readonly authenticationService: AuthenticationService) {}
   @HttpCode(HttpStatus.OK)
   @Post("signin")
-  async signin(@Body() signinDto: SigninDto, @Res({ passthrough: true }) res: Response) {
-    const { accessToken: jwt, refreshToken } = await this.authenticationService.signIn(signinDto);
-    res.cookie("accessToken", jwt, {
-      secure: true,
-      httpOnly: true,
-      sameSite: true,
-    });
-    res.cookie("refreshToken", refreshToken, {
-      secure: true,
-      httpOnly: true,
-      sameSite: true,
-    });
-    res.json({ accessToken: jwt, refreshToken });
+  async signin(@Body() signinDto: SigninDto) {
+    const { accessToken, refreshToken } = await this.authenticationService.signIn(signinDto);
+    return { accessToken, refreshToken };
   }
   @Post("signup")
   async signup(@Body() signUpDto: SignupDto) {
