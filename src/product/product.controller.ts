@@ -22,7 +22,7 @@ import { logger } from "@/logger";
 @CacheKey("producs")
 @Controller("product")
 export class ProductController {
-  constructor(private readonly ProductService: ProductService) { }
+  constructor(private readonly ProductService: ProductService) {}
   @Post()
   async create(@Body() createProductDto: CreateProductDto) {
     return await this.ProductService.create(createProductDto);

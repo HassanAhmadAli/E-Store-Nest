@@ -13,7 +13,6 @@ export class ProductService {
   ) {}
   async create(createProductDto: CreateProductDto) {
     const { name, brand } = createProductDto;
-
     return await this.prisma.product.create({
       data: {
         name,

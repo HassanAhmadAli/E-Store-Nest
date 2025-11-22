@@ -15,47 +15,114 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Product {
-  id    Int    @id @default(autoincrement())
-  name  String
-  brand String
-
-  @@index([name, brand(sort: Desc)])
-}
-
+// Enums match the actors and states in the diagram
 enum Roles {
   Admin
-  Regular
+  Citizen
+  Employee
+}
+
+model Complaint {
+  id                 Int             @id @default(autoincrement())
+  title              String
+  description        String
+  status             ComplaintStatus @default(Pending)
+  isArchived         Boolean         @default(false)
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  // Foreign Keys
+  citizenId          Int
+  assignedEmployeeId Int?
+  // Relations
+  citizen            User            @relation("CitizenComplaints", fields: [citizenId], references: [id])
+  assignedEmployee   User?           @relation("EmployeeComplaints", fields: [assignedEmployeeId], references: [id])
+  logs               ComplaintLog[]
+  notifications      Notification[]
+  attachments        Attachment[]
+}
+
+model Attachment {
+  id          Int       @id @default(autoincrement())
+  fileUrl     String
+  fileType    String
+  complaintId Int
+  complaint   Complaint @relation(fields: [complaintId], references: [id])
+  // auto generated
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+enum ComplaintStatus {
+  Pending
+  InProgress
+  Resolved
+  Rejected
 }
 
 model User {
-  id       Int       @id @default(autoincrement())
-  email    String    @unique
-  password String
-  role     Roles     @default(Regular)
-  Comment  Comment[] // auto added
+  id                 Int            @id @default(autoincrement())
+  fullName           String
+  email              String         @unique
+  phoneNumber        String
+  password           String
+  national_id        String         @unique
+  role               Roles
+  isActive           Boolean        @default(true)
+  // Relations
+  complaintsFiled    Complaint[]    @relation("CitizenComplaints")
+  complaintsAssigned Complaint[]    @relation("EmployeeComplaints")
+  logsCreated        ComplaintLog[] // Tracks who updated a complaint status
+  notifications      Notification[]
+  otps               OTPCode[]
+  // auto generated
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
 }
 
-model Geo {
-  id  Int    @id @default(autoincrement())
-  lat String
-  lng String
+model ComplaintLog {
+  id             Int             @id @default(autoincrement())
+  previousStatus ComplaintStatus
+  newStatus      ComplaintStatus
+  notes          String?
+  // Foreign Keys
+  complaintId    Int
+  changedById    Int
+  // Relations
+  complaint      Complaint       @relation(fields: [complaintId], references: [id])
+  changedBy      User            @relation(fields: [changedById], references: [id])
+  // auto generated
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
 }
 
-model Address {
-  id      Int    @id @default(autoincrement())
-  street  String
-  suite   String
-  city    String
-  zipcode String
-}
-
-model Comment {
-  id          Int      @id @default(autoincrement())
-  text        String   @db.VarChar()
-  commenter   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date        DateTime @default(now())
-  email       String
-  subComments Int[] //this one should be linked to the comment model itself
+model Notification {
+  id          Int        @id @default(autoincrement())
+  message     String
+  isRead      Boolean    @default(false)
+  // Foreign Keys
   userId      Int
+  complaintId Int?
+  // Relations
+  user        User       @relation(fields: [userId], references: [id])
+  complaint   Complaint? @relation(fields: [complaintId], references: [id])
+  // auto generated
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model OTPCode {
+  id         Int      @id @default(autoincrement())
+  identifier String // Email or Phone 
+  code       String
+  expiresAt  DateTime
+  isVerified Boolean  @default(false)
+  // Optional: Link OTP to a user if they already exist (for password reset)
+  userId     Int?
+  user       User?    @relation(fields: [userId], references: [id])
+  // auto generated
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // indexes
+  @@index([identifier])
 }

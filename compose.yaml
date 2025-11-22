@@ -1,17 +1,37 @@
 services:
+  app1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./src:/app/src
+      - ./generated:/app/generated
+      - /app/node_modules
+    ports:
+      - "3001:3000"
+    depends_on:
+      - db
+      - db3
+    command: ["pnpm", "start:dev"]
+
   db:
     image: postgres
     ports:
-      - 5432:5432
+      - "5432:5432"
     environment:
       POSTGRES_PASSWORD: pass123
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
   db3:
     image: redis
     ports:
-      - 6379:6379
+      - "6379:6379"
     restart: always
     volumes:
-      - redis-data:/data
+      - redis_data:/data
     command: redis-server --appendonly yes
+
 volumes:
-  redis-data:
+  redis_data:
+  postgres_data:
