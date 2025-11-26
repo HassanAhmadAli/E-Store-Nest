@@ -1,32 +1,28 @@
+name: web_app_stack
 services:
   app1:
     build:
-      context: .
       dockerfile: Dockerfile
-    volumes:
-      - ./src:/app/src
-      - ./generated:/app/generated
-      - /app/node_modules
     ports:
-      - "3001:3000"
+      - "3000:3000"
     depends_on:
-      - db
-      - db3
-    command: ["pnpm", "start:dev"]
+      - postgres_db
+      - redis_db
 
-  db:
+  postgres_db:
     image: postgres
-    ports:
-      - "5432:5432"
+    expose:
+      - 5432
     environment:
-      POSTGRES_PASSWORD: pass123
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password123
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  db3:
+  redis_db:
     image: redis
-    ports:
-      - "6379:6379"
+    expose:
+      - 6379
     restart: always
     volumes:
       - redis_data:/data

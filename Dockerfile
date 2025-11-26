@@ -8,15 +8,20 @@ WORKDIR /app
 RUN --mount=type=cache,target=/root/.npm,id=npm_cache \
     npm install -g pnpm &&\
     pnpm config set store-dir $PNPM_HOME
-
-COPY package.json pnpm-workspace.yaml ./
+RUN --mount=type=cache,target=/pnpm,id=pnpm_cache \
+    pnpm add -g typescript ts-node @nestjs/cli
+COPY prisma/ ./prisma/
+COPY src src
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml prisma.config.ts tsconfig.build.json tsconfig.json  ./
+COPY .docker.env .env
+RUN --mount=type=cache,target=/pnpm,id=pnpm_cache \
+    --mount=type=cache,target=/app/node_modules/,id=app_node_modules \
+    pnpm install &&\
+    pnpm run db:generate &&\
+    pnpm run build
 
 RUN --mount=type=cache,target=/pnpm,id=pnpm_cache \
-    pnpm install --production
-
-COPY src ./src
-COPY generated ./generated
+    pnpm install -P
 
 EXPOSE 3000
-
-# CMD ["pnpm", "run", "start:dev"]
+CMD ["pnpm", "run", "start:prod"]
