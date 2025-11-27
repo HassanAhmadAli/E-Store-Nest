@@ -36,32 +36,32 @@ export class AuthenticationService {
     this.JWT_TTL = this.config.get("JWT_TTL", { infer: true })!;
     this.JWT_REFRESH_TTL = this.config.get("JWT_REFRESH_TTL", { infer: true })!;
   }
-  async signUP(signupDto: SignupDto) {
-    const { email, role, password: originalPassword } = signupDto;
-    const password = await this.hashingService.hash({ original: originalPassword });
-    try {
-      return await this.prisma.user.create({
-        data: {
-          email,
-          password,
-          role,
-        },
-        select: {
-          id: true,
-          email: true,
-          role: true,
-        },
-      });
-    } catch (e) {
-      if (e instanceof Prisma.PrismaClientUnknownRequestError && e.code === "P2002") {
-        throw new ConflictException(ErrorMessages.EMAIL_ALREADY_EXIST);
-      }
-      throw e;
-    }
-  }
+  // async signUP(signupDto: SignupDto) {
+  //   const { email, role, password: originalPassword } = signupDto;
+  //   const password = await this.hashingService.hash({ original: originalPassword });
+  //   try {
+  //     return await this.prisma.user.create({
+  //       data: {
+  //         email,
+  //         password,
+  //         role,
+  //       },
+  //       select: {
+  //         id: true,
+  //         email: true,
+  //         role: true,
+  //       },
+  //     });
+  //   } catch (e) {
+  //     if (e instanceof Prisma.PrismaClientUnknownRequestError && e.code === "P2002") {
+  //       throw new ConflictException(ErrorMessages.EMAIL_ALREADY_EXIST);
+  //     }
+  //     throw e;
+  //   }
+  // }
   async signIn(signInDto: SigninDto) {
     const { email } = signInDto;
-    const user = await this.prisma.user.findUnique({
+    const user = await this.prisma.client.user.findUnique({
       where: { email },
       select: {
         email: true,
@@ -89,7 +89,7 @@ export class AuthenticationService {
   async signout(signoutDto: SignoutDto) {
     const user = await this.jwtService.verifyAsync<RefreshTokenPayload>(signoutDto.refreshToken);
     const id = user.sub;
-    const dbUser = await this.prisma.user.findUniqueOrThrow({ where: { id } });
+    const dbUser = await this.prisma.client.user.findUniqueOrThrow({ where: { id } });
     const doesPasswordMatch = await this.hashingService.compare({
       original: signoutDto.password,
       encrypted: dbUser.password,
@@ -110,7 +110,7 @@ export class AuthenticationService {
       throw new UnauthorizedException();
     }
     await this.refreshTokenIdsStorage.invalidate(sub);
-    const user = await this.prisma.user.findUnique({
+    const user = await this.prisma.client.user.findUnique({
       where: {
         id: sub,
       },

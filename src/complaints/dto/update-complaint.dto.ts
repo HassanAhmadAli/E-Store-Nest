@@ -1,4 +1,4 @@
-import { PartialType } from "@nestjs/swagger";
-import { CreateComplaintDto } from "./create-complaint.dto";
-
-export class UpdateComplaintDto extends PartialType(CreateComplaintDto) {}
+import { CreateComplaintSchema } from "./create-complaint.dto";
+import { createZodDto } from "nestjs-zod";
+export const UpdateComplaintSchema = CreateComplaintSchema.partial();
+export class UpdateComplaintDto extends createZodDto(UpdateComplaintSchema) {}

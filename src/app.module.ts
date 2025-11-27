@@ -5,7 +5,6 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import { EnvVariables, validateEnv } from "@/common/schema/env";
 import { CommonModule } from "@/common/common.module";
 import { PrismaModule } from "@/prisma/prisma.module";
-import { ProductModule } from "@/product/product.module";
 import { TimeoutInterceptor } from "@/common/interceptors/timeout.interceptor";
 import { IdentityAndAccessManagementModule } from "@/iam/iam.module";
 import { DevtoolsModule } from "@nestjs/devtools-integration";
@@ -40,7 +39,6 @@ import KeyvRedis from "@keyv/redis";
     }),
     CommonModule,
     PrismaModule,
-    ProductModule,
     IdentityAndAccessManagementModule,
     UserModule,
     ComplaintsModule,

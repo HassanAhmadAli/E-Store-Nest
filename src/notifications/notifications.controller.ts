@@ -3,7 +3,7 @@ import { NotificationsService } from "./notifications.service";
 
 @Controller("notifications")
 export class NotificationsController {
-  constructor(private notificationsService: NotificationsService) { }
+  constructor(private notificationsService: NotificationsService) {}
   @Post("send")
   sendNotification(
     @Body() body: { userId: string; title: string; message: string; type?: "info" | "success" | "warning" | "error" },

@@ -1,11 +1,11 @@
 import { pino } from "@/logger/pino";
 import { ArgumentsHost, BadRequestException, Catch, ConflictException, NotFoundException } from "@nestjs/common";
 import { BaseExceptionFilter } from "@nestjs/core";
-import { Prisma } from "@/prisma";
+import { PrismaClientKnownRequestError } from "@/prisma";
 
-@Catch(Prisma.PrismaClientKnownRequestError)
+@Catch(PrismaClientKnownRequestError)
 export class PrismaServerErrorFilter extends BaseExceptionFilter {
-  catch(exception: Prisma.PrismaClientKnownRequestError, host: ArgumentsHost) {
+  catch(exception: PrismaClientKnownRequestError, host: ArgumentsHost) {
     switch (exception.code) {
       case "P2002": {
         const target = (exception.meta?.target as string) || "resource";

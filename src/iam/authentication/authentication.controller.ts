@@ -16,11 +16,11 @@ export class AuthenticationController {
     const { accessToken, refreshToken } = await this.authenticationService.signIn(signinDto);
     return { accessToken, refreshToken };
   }
-  @Post("signup")
-  async signup(@Body() signUpDto: SignupDto) {
-    const user = await this.authenticationService.signUP(signUpDto);
-    return user;
-  }
+  // @Post("signup")
+  // async signup(@Body() signUpDto: SignupDto) {
+  //   const user = await this.authenticationService.signUP(signUpDto);
+  //   return user;
+  // }
   @HttpCode(HttpStatus.OK)
   @Post("refresh-tokens")
   refreshTokens(@Body() refreshTokensDto: RefreshTokenDto) {
