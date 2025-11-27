@@ -10,6 +10,7 @@ import { TimeoutInterceptor } from "@/common/interceptors/timeout.interceptor";
 import { IdentityAndAccessManagementModule } from "@/iam/iam.module";
 import { DevtoolsModule } from "@nestjs/devtools-integration";
 import { CacheModule } from "@nestjs/cache-manager";
+import { NotificationsModule } from './notifications/notifications.module';
 import KeyvRedis from "@keyv/redis";
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import KeyvRedis from "@keyv/redis";
     PrismaModule,
     ProductModule,
     IdentityAndAccessManagementModule,
+    NotificationsModule,
   ],
   controllers: [],
   providers: [
