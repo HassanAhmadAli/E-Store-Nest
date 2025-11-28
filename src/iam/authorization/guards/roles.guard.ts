@@ -3,7 +3,7 @@ import { RequestWithActiveUser } from "@/iam/decorators/ActiveUser.decorator";
 import { PrismaService } from "@/prisma";
 import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
-import {  Role } from "@/prisma";
+import { Role } from "@/prisma";
 @Injectable()
 export class RolesGuard implements CanActivate {
   constructor(

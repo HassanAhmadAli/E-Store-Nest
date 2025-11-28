@@ -1,11 +1,23 @@
 import { Injectable } from "@nestjs/common";
 import { CreateComplaintDto } from "./dto/create-complaint.dto";
 import { UpdateComplaintDto } from "./dto/update-complaint.dto";
+import { PrismaService } from "@/prisma";
 
 @Injectable()
 export class ComplaintsService {
-  create(createComplaintDto: CreateComplaintDto) {
-    return "This action adds a new complaint";
+  constructor(private readonly prismaService: PrismaService) {}
+  async create(createComplaintDto: CreateComplaintDto, citizenId: number) {
+    return await this.prismaService.client.complaint.create({
+      data: {
+        ...createComplaintDto,
+        citizenId,
+      },
+      select: {
+        title: true,
+        description: true,
+        status: true,
+      },
+    });
   }
 
   findAll() {
@@ -16,7 +28,7 @@ export class ComplaintsService {
     return `This action returns a #${id} complaint`;
   }
 
-  update(id: number, updateComplaintDto: UpdateComplaintDto) {
+  update(id: number, _updateComplaintDto: UpdateComplaintDto) {
     return `This action updates a #${id} complaint`;
   }
 

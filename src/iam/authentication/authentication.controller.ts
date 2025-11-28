@@ -1,5 +1,4 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, Res, UseInterceptors } from "@nestjs/common";
-import type { Response } from "express";
+import { Body, Controller, HttpCode, HttpStatus, Post } from "@nestjs/common";
 import { SigninDto } from "./dto/signin.dto";
 import { SignupDto } from "./dto/signinup.dto";
 import { AuthenticationService } from "./authentication.service";
@@ -16,11 +15,11 @@ export class AuthenticationController {
     const { accessToken, refreshToken } = await this.authenticationService.signIn(signinDto);
     return { accessToken, refreshToken };
   }
-  // @Post("signup")
-  // async signup(@Body() signUpDto: SignupDto) {
-  //   const user = await this.authenticationService.signUP(signUpDto);
-  //   return user;
-  // }
+  @Post("signup")
+  async signup(@Body() signUpDto: SignupDto) {
+    const user = await this.authenticationService.signup(signUpDto);
+    return user;
+  }
   @HttpCode(HttpStatus.OK)
   @Post("refresh-tokens")
   refreshTokens(@Body() refreshTokensDto: RefreshTokenDto) {

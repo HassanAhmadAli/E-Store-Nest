@@ -1,6 +1,7 @@
+import { CreateUserSchema } from "@/user/schema/user";
 import { createZodDto } from "nestjs-zod";
-import { SingupSchema } from "./signinup.dto";
-export const SigninSchema = SingupSchema.pick({
+
+export const SigninSchema = CreateUserSchema.pick({
   email: true,
   password: true,
 });

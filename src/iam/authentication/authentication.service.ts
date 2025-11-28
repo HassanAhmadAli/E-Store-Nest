@@ -36,29 +36,27 @@ export class AuthenticationService {
     this.JWT_TTL = this.config.get("JWT_TTL", { infer: true })!;
     this.JWT_REFRESH_TTL = this.config.get("JWT_REFRESH_TTL", { infer: true })!;
   }
-  // async signUP(signupDto: SignupDto) {
-  //   const { email, role, password: originalPassword } = signupDto;
-  //   const password = await this.hashingService.hash({ original: originalPassword });
-  //   try {
-  //     return await this.prisma.user.create({
-  //       data: {
-  //         email,
-  //         password,
-  //         role,
-  //       },
-  //       select: {
-  //         id: true,
-  //         email: true,
-  //         role: true,
-  //       },
-  //     });
-  //   } catch (e) {
-  //     if (e instanceof Prisma.PrismaClientUnknownRequestError && e.code === "P2002") {
-  //       throw new ConflictException(ErrorMessages.EMAIL_ALREADY_EXIST);
-  //     }
-  //     throw e;
-  //   }
-  // }
+  async signup(signupDto: SignupDto) {
+    const password = await this.hashingService.hash({ original: signupDto.password });
+    try {
+      return await this.prisma.client.user.create({
+        data: {
+          ..._.omit(signupDto, ["password"]),
+          password,
+        },
+        select: {
+          id: true,
+          email: true,
+          role: true,
+        },
+      });
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientUnknownRequestError && e.code === "P2002") {
+        throw new ConflictException(ErrorMessages.EMAIL_ALREADY_EXIST);
+      }
+      throw e;
+    }
+  }
   async signIn(signInDto: SigninDto) {
     const { email } = signInDto;
     const user = await this.prisma.client.user.findUnique({
