@@ -33,3 +33,6 @@
 **/dist
 LICENSE
 README.md
+public/
+out/*
+dist/*

@@ -9,7 +9,7 @@ datasource db {
 }
 
 // Enums match the actors and states in the diagram
-enum Roles {
+enum Role {
   Admin
   Citizen
   Employee
@@ -23,10 +23,10 @@ model Complaint {
   isArchived         Boolean         @default(false)
   createdAt          DateTime        @default(now())
   updatedAt          DateTime        @updatedAt
-  // Foreign Keys
+
   citizenId          Int
   assignedEmployeeId Int?
-  // Relations
+
   citizen            User            @relation("CitizenComplaints", fields: [citizenId], references: [id])
   assignedEmployee   User?           @relation("EmployeeComplaints", fields: [assignedEmployeeId], references: [id])
   logs               ComplaintLog[]
@@ -40,7 +40,7 @@ model Attachment {
   fileType    String
   complaintId Int
   complaint   Complaint @relation(fields: [complaintId], references: [id])
-  // auto generated
+
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }
@@ -59,15 +59,15 @@ model User {
   phoneNumber        String
   password           String
   national_id        String         @unique
-  role               Roles
+  role               Role
   isActive           Boolean        @default(true)
-  // Relations
+
   complaintsFiled    Complaint[]    @relation("CitizenComplaints")
   complaintsAssigned Complaint[]    @relation("EmployeeComplaints")
   logsCreated        ComplaintLog[] // Tracks who updated a complaint status
   notifications      Notification[]
   otps               OTPCode[]
-  // auto generated
+
   createdAt          DateTime       @default(now())
   updatedAt          DateTime       @updatedAt
 }
@@ -77,13 +77,13 @@ model ComplaintLog {
   previousStatus ComplaintStatus
   newStatus      ComplaintStatus
   notes          String?
-  // Foreign Keys
+
   complaintId    Int
   changedById    Int
-  // Relations
+
   complaint      Complaint       @relation(fields: [complaintId], references: [id])
   changedBy      User            @relation(fields: [changedById], references: [id])
-  // auto generated
+
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
 }
@@ -92,13 +92,13 @@ model Notification {
   id          Int        @id @default(autoincrement())
   message     String
   isRead      Boolean    @default(false)
-  // Foreign Keys
+
   userId      Int
   complaintId Int?
-  // Relations
+
   user        User       @relation(fields: [userId], references: [id])
   complaint   Complaint? @relation(fields: [complaintId], references: [id])
-  // auto generated
+
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 }
@@ -109,13 +109,13 @@ model OTPCode {
   code       String
   expiresAt  DateTime
   isVerified Boolean  @default(false)
-  // Optional: Link OTP to a user if they already exist (for password reset)
+
   userId     Int?
   user       User?    @relation(fields: [userId], references: [id])
-  // auto generated
+
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  // indexes
+
   @@index([identifier])
 }

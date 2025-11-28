@@ -1,27 +1,31 @@
-FROM node:alpine
-# setup ENV
+FROM node:alpine AS base
+WORKDIR /app
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 ENV PORT=3000
-WORKDIR /app
-
+ENV IS_DOCKER=true
 RUN --mount=type=cache,target=/root/.npm,id=npm_cache \
     npm install -g pnpm &&\
     pnpm config set store-dir $PNPM_HOME
-RUN --mount=type=cache,target=/pnpm,id=pnpm_cache \
-    pnpm add -g typescript ts-node @nestjs/cli
-COPY prisma/ ./prisma/
-COPY src src
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml prisma.config.ts tsconfig.build.json tsconfig.json  ./
-COPY .docker.env .env
+
+FROM base AS builder
+WORKDIR /app
+COPY . .
+COPY .docker.env ./.env
 RUN --mount=type=cache,target=/pnpm,id=pnpm_cache \
     --mount=type=cache,target=/app/node_modules/,id=app_node_modules \
-    pnpm install &&\
+    pnpm install --frozen-lockfile &&\
     pnpm run db:generate &&\
     pnpm run build
 
+FROM base AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+COPY --from=builder /app/package.json /app/pnpm-lock.yaml /app/pnpm-workspace.yaml  ./
 RUN --mount=type=cache,target=/pnpm,id=pnpm_cache \
-    pnpm install -P
+    pnpm install -P --frozen-lockfile
+COPY --from=builder /app/.env /app/out/ ./out/
 
-EXPOSE 3000
+
 CMD ["pnpm", "run", "start:prod"]
+EXPOSE 3000

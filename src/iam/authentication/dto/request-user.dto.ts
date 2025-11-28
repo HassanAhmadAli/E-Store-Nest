@@ -1,9 +1,9 @@
-import { Roles } from "@/prisma";
+import { Role } from "@/prisma";
 import { z } from "zod/v4";
 export const ActiveUserSchema = z.object({
   sub: z.number(),
   email: z.email(),
-  role: z.enum(Roles),
+  role: z.enum(Role),
 });
 export const RefreshTokenPayloadSchema = ActiveUserSchema.extend({
   tokenType: z.literal("refresh").default("refresh"),
