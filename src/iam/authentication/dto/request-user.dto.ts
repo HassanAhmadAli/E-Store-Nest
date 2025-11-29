@@ -14,6 +14,6 @@ export const AccessTokenPayloadSchema = ActiveUserSchema.extend({
   tokenType: z.literal("access").default("access"),
 });
 
-export type ActiveUser = z.infer<typeof ActiveUserSchema>;
+export type ActiveUserType = z.infer<typeof ActiveUserSchema>;
 export type RefreshTokenPayload = z.infer<typeof RefreshTokenPayloadSchema>;
 export type AccessTokenPayload = z.infer<typeof AccessTokenPayloadSchema>;

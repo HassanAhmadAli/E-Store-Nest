@@ -10,7 +10,7 @@ import {
   AccessTokenPayloadSchema,
   RefreshTokenPayloadSchema,
   RefreshTokenPayload,
-  ActiveUser,
+  ActiveUserType,
 } from "./dto/request-user.dto";
 import { randomUUID, randomInt } from "node:crypto";
 import { RefreshTokenIdsStorage } from "./refresh-token-ids.storage";
@@ -42,7 +42,8 @@ export class AuthenticationService {
 
   async signup(signupDto: SignupDto) {
     const password = await this.hashingService.hash({ original: signupDto.password });
-    const verificationCode = randomInt(100000, 999999).toString();
+    const NODE_ENV = this.config.get("NODE_ENV", { infer: true });
+    const verificationCode = (NODE_ENV === "production" ? randomInt(10000000, 99999999) : 12345678).toString();
     const verificationCodeExpiresAt = new Date(Date.now() + 15 * 60 * 1000);
     const _user = await this.prisma.client.user.create({
       data: {
@@ -98,10 +99,7 @@ export class AuthenticationService {
         verificationCodeExpiresAt: null,
       },
     });
-    const signedData = { sub: user.id, email: user.email, role: user.role };
-    const generatedTokens = await this.generateTokens(signedData);
-    await this.refreshTokenIdsStorage.insert(user.id, generatedTokens.refreshTokenId);
-    return _.omit(generatedTokens, ["refreshTokenId"]);
+    return { message: "Account Verified Successfully, please login" };
   }
 
   async signIn(signInDto: SigninDto) {
@@ -171,7 +169,7 @@ export class AuthenticationService {
     await this.refreshTokenIdsStorage.insert(sub, generatedTokens.refreshTokenId);
     return _.omit(generatedTokens, ["refreshTokenId"]);
   }
-  public async generateTokens(payLoadDto: ActiveUser) {
+  public async generateTokens(payLoadDto: ActiveUserType) {
     const refreshTokenPayload = RefreshTokenPayloadSchema.parse({
       ...payLoadDto,
       refreshTokenId: `userId=${payLoadDto.sub.toString()}.${randomUUID()}`,
@@ -188,7 +186,7 @@ export class AuthenticationService {
 
     return { accessToken, refreshToken, refreshTokenId: refreshTokenPayload.refreshTokenId };
   }
-  private async signMethod<T extends ActiveUser>(signedData: T, expiresIn: DurationType) {
+  private async signMethod<T extends ActiveUserType>(signedData: T, expiresIn: DurationType) {
     return await this.jwtService.signAsync(signedData, {
       expiresIn,
     } satisfies JwtSignOptions);

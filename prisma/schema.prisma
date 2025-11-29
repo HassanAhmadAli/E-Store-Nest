@@ -19,6 +19,7 @@ enum Role {
   Admin
   Citizen
   Employee
+  Debugging
 }
 
 enum Priority {

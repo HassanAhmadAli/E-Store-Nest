@@ -1,7 +1,9 @@
 import { prettifyError, z } from "zod/v4";
 import { durationSchema } from "@/common/schema/duration-schema";
+export const NODE_ENV_Schema = z.enum(["development", "production", "test"]).default("development");
+
 export const envSchema = z.object({
-  NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
+  NODE_ENV: NODE_ENV_Schema,
   PORT: z.coerce.number().int().min(0).max(65535).default(3000),
   DATABASE_URL: z.string(),
   JWT_SECRET: z.string(),
