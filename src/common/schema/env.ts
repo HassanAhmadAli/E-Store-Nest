@@ -18,6 +18,9 @@ export const envSchema = z.object({
     .default("1y")
     .meta({ description: " identifies the time to live of the refresh token" }),
   REDIS_DATABASE_URL: z.string().nonempty().default("redis://localhost:6379"),
+  EMAIL_HOST: z.string(),
+  EMAIL_User: z.email(),
+  EMAIL_Password: z.string(),
 });
 export const validateEnv = (input: Record<string, any>) => {
   const { data: env, error, success } = envSchema.safeParse(input);

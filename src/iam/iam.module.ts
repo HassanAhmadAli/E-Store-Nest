@@ -11,6 +11,7 @@ import { AuthenticationService } from "./authentication/authentication.service";
 import { APP_FILTER, APP_GUARD } from "@nestjs/core";
 import { AuthenticationGuard } from "./authentication/guard/authentication.guard";
 import { JwtErrorFilter } from "./authorization/filter/jwt-error.filter";
+import { MailerModule } from "@nestjs-modules/mailer";
 
 @Module({
   controllers: [AuthenticationController],
@@ -32,6 +33,21 @@ import { JwtErrorFilter } from "./authorization/filter/jwt-error.filter";
     },
   ],
   imports: [
+    MailerModule.forRootAsync({
+      imports: [ConfigService],
+      inject: [ConfigService],
+      useFactory(configService: ConfigService<EnvVariables>) {
+        return {
+          transport: {
+            host: configService.get("EMAIL_HOST", { infer: true }),
+            auth: {
+              user: configService.get("EMAIL_User", { infer: true }),
+              pass: configService.get("EMAIL_Password", { infer: true }),
+            },
+          },
+        };
+      },
+    }),
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService<EnvVariables>) => {

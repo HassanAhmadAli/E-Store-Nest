@@ -4,7 +4,7 @@ import { PrismaService } from "@/prisma";
 
 @Injectable()
 export class ComplaintsService {
-  constructor(private readonly prismaService: PrismaService) { }
+  constructor(private readonly prismaService: PrismaService) {}
   async create(createComplaintDto: CreateComplaintDto, citizenId: number) {
     return await this.prismaService.client.complaint.create({
       data: {
@@ -18,5 +18,4 @@ export class ComplaintsService {
       },
     });
   }
-
 }

@@ -5,11 +5,11 @@ import { AuthenticationService } from "./authentication.service";
 import { Public } from "@/common/decorators/public.decorator";
 import { RefreshTokenDto } from "./dto/refresh-token.dto";
 import { SignoutDto } from "./dto/signout.dto";
+import { VerifyEmailDto } from "./dto/verify-email.dto";
 @Public()
 @Controller("authentication")
 export class AuthenticationController {
-  constructor(private readonly authenticationService: AuthenticationService) { }
-
+  constructor(private readonly authenticationService: AuthenticationService) {}
   @HttpCode(HttpStatus.OK)
   @Post("signin")
   async signin(@Body() signinDto: SigninDto) {
@@ -21,6 +21,11 @@ export class AuthenticationController {
   @Post("otp/send")
   sendOTP() {
     return { msg: "Send OTP" };
+  }
+
+  @Post("verify")
+  async verify(@Body() verifyEmailDto: VerifyEmailDto) {
+    return this.authenticationService.verifyEmail(verifyEmailDto);
   }
 
   @Post("signup")

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseIntPipe } from "@nestjs/common";
+import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe } from "@nestjs/common";
 import { ComplaintsService } from "./complaints.service";
 import { CreateComplaintDto } from "./dto/create-complaint.dto";
 
@@ -6,7 +6,7 @@ import { type ActiveUser, GetActiveUser } from "@/iam/decorators/ActiveUser.deco
 
 @Controller("complaints")
 export class ComplaintsController {
-  constructor(private readonly complaintsService: ComplaintsService) { }
+  constructor(private readonly complaintsService: ComplaintsService) {}
 
   @Post()
   raiseComplaint(@Body() createComplaintDto: CreateComplaintDto, @GetActiveUser() activeUser: ActiveUser) {
@@ -15,21 +15,20 @@ export class ComplaintsController {
   //todo: View/Track Status
   @Get("my-complaints")
   myComplaints() {
-    return { msg: "my-complaints" }
+    return { msg: "my-complaints" };
   }
   @Get("assigned")
   x() {
-    return { msg: "Receive/Process" }
+    return { msg: "Receive/Process" };
   }
   @Patch(":id/status")
   y(@Param("id", ParseIntPipe) _id: number) {
-    return { msg: "Update Status" }
+    return { msg: "Update Status" };
   }
   @Delete(":id/status")
   z(@Param("id", ParseIntPipe) _id: number) {
-    return { msg: "Archive Complaint" }
+    return { msg: "Archive Complaint" };
   }
   //todo: show and trace complaints for citizen
   //todo: show and trace complaints for citizen
-
 }

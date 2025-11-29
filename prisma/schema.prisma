@@ -102,6 +102,10 @@ model User {
   role        Role
   isActive    Boolean @default(true)
 
+  isVerified                Boolean   @default(false)
+  verificationCode          String?
+  verificationCodeExpiresAt DateTime?
+
   complaintsFiled    Complaint[]    @relation("CitizenComplaints")
   complaintsAssigned Complaint[]    @relation("EmployeeComplaints")
   logsCreated        ComplaintLog[] // Tracks who updated a complaint status
