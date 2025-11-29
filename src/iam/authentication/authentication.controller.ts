@@ -8,23 +8,33 @@ import { SignoutDto } from "./dto/signout.dto";
 @Public()
 @Controller("authentication")
 export class AuthenticationController {
-  constructor(private readonly authenticationService: AuthenticationService) {}
+  constructor(private readonly authenticationService: AuthenticationService) { }
+
   @HttpCode(HttpStatus.OK)
   @Post("signin")
   async signin(@Body() signinDto: SigninDto) {
     const { accessToken, refreshToken } = await this.authenticationService.signIn(signinDto);
     return { accessToken, refreshToken };
   }
+
+  //todo: send otp
+  @Post("otp/send")
+  sendOTP() {
+    return { msg: "Send OTP" };
+  }
+
   @Post("signup")
   async signup(@Body() signUpDto: SignupDto) {
     const user = await this.authenticationService.signup(signUpDto);
     return user;
   }
+
   @HttpCode(HttpStatus.OK)
   @Post("refresh-tokens")
   refreshTokens(@Body() refreshTokensDto: RefreshTokenDto) {
     return this.authenticationService.refreshTokens(refreshTokensDto);
   }
+
   @HttpCode(HttpStatus.OK)
   @Post("signout")
   signout(@Body() signoutDto: SignoutDto) {
