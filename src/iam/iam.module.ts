@@ -1,6 +1,6 @@
 import { Module } from "@nestjs/common";
 import { JwtModule } from "@nestjs/jwt";
-import { ConfigService } from "@nestjs/config";
+import { ConfigModule, ConfigService } from "@nestjs/config";
 import { EnvVariables } from "@/common/schema/env";
 import { RefreshTokenIdsStorage } from "./authentication/refresh-token-ids.storage";
 import { AccessTokenGuard } from "./authentication/guard/access-token.guard";
@@ -34,15 +34,15 @@ import { MailerModule } from "@nestjs-modules/mailer";
   ],
   imports: [
     MailerModule.forRootAsync({
-      imports: [ConfigService],
+      imports: [ConfigModule],
       inject: [ConfigService],
       useFactory(configService: ConfigService<EnvVariables>) {
         return {
           transport: {
-            host: configService.get("EMAIL_HOST", { infer: true }),
+            host: configService.get("APP_EMAIL_HOST", { infer: true }),
             auth: {
-              user: configService.get("EMAIL_User", { infer: true }),
-              pass: configService.get("EMAIL_Password", { infer: true }),
+              user: configService.get("APP_EMAIL_User", { infer: true }),
+              pass: configService.get("APP_EMAIL_Password", { infer: true }),
             },
           },
         };

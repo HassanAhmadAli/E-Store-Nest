@@ -21,6 +21,7 @@
     "test:e2e:win": "powershell -c \"$x = ls **/*e2e-spec.ts ; bun test $x\"",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev --name e-store",
+    "db:reset": "pnpm prisma migrate reset && prisma migrate dev --name e-store && pnpm prisma generate",
     "db:studio": "prisma studio",
     "debug:circular-dependency": "npm run build && madge out/src/main.js --circular"
   },

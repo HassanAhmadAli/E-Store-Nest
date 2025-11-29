@@ -8,27 +8,35 @@ import { type ActiveUser, GetActiveUser } from "@/iam/decorators/ActiveUser.deco
 export class ComplaintsController {
   constructor(private readonly complaintsService: ComplaintsService) {}
 
+  //todo: Raise Complaint
   @Post()
   raiseComplaint(@Body() createComplaintDto: CreateComplaintDto, @GetActiveUser() activeUser: ActiveUser) {
     return this.complaintsService.create(createComplaintDto, activeUser.sub);
   }
+
   //todo: View/Track Status
   @Get("my-complaints")
   myComplaints() {
-    return { msg: "my-complaints" };
+    return { msg: "	View/Track Status" };
   }
+
+  //todo: Receive/Process
   @Get("assigned")
   x() {
     return { msg: "Receive/Process" };
   }
+
+  //todo: Update Status
   @Patch(":id/status")
-  y(@Param("id", ParseIntPipe) _id: number) {
+  updateStatus(@Param("id", ParseIntPipe) _id: number) {
     return { msg: "Update Status" };
   }
+
+  //todo: Archive Complaint
   @Delete(":id/status")
-  z(@Param("id", ParseIntPipe) _id: number) {
+  archiveComplaint(@Param("id", ParseIntPipe) _id: number) {
     return { msg: "Archive Complaint" };
   }
-  //todo: show and trace complaints for citizen
+
   //todo: show and trace complaints for citizen
 }

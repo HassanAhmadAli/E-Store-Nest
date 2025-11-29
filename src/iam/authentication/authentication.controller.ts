@@ -10,6 +10,7 @@ import { VerifyEmailDto } from "./dto/verify-email.dto";
 @Controller("authentication")
 export class AuthenticationController {
   constructor(private readonly authenticationService: AuthenticationService) {}
+
   @HttpCode(HttpStatus.OK)
   @Post("signin")
   async signin(@Body() signinDto: SigninDto) {
@@ -17,17 +18,12 @@ export class AuthenticationController {
     return { accessToken, refreshToken };
   }
 
-  //todo: send otp
-  @Post("otp/send")
-  sendOTP() {
-    return { msg: "Send OTP" };
-  }
-
   @Post("verify")
   async verify(@Body() verifyEmailDto: VerifyEmailDto) {
     return this.authenticationService.verifyEmail(verifyEmailDto);
   }
 
+  // Create Account
   @Post("signup")
   async signup(@Body() signUpDto: SignupDto) {
     const user = await this.authenticationService.signup(signUpDto);
