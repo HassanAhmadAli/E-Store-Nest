@@ -1,4 +1,4 @@
-import { prettifyError, z } from "zod/v4";
+import { prettifyError, z } from "zod";
 import { envSchema, NODE_ENV_Schema } from "./schema/env";
 const { success, error } = NODE_ENV_Schema.safeParse(process.env.NODE_ENV);
 if (!success) {

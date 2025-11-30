@@ -1,5 +1,5 @@
 import "@/common/env";
-import { z } from "zod/v4";
+import { z } from "zod";
 import { Role } from "@/prisma";
 import _ from "lodash";
 import { InternalServerErrorException } from "@nestjs/common";

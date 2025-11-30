@@ -1,5 +1,5 @@
 import { Role } from "@/prisma";
-import { z } from "zod/v4";
+import { z } from "zod";
 export const ActiveUserSchema = z.object({
   sub: z.number(),
   email: z.email(),

@@ -1,4 +1,4 @@
-import { prettifyError, z } from "zod/v4";
+import { prettifyError, z } from "zod";
 import { durationSchema } from "@/common/schema/duration-schema";
 export const NODE_ENV_Schema = z.enum(["development", "production", "test"]).default("development");
 

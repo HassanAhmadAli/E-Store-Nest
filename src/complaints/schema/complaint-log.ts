@@ -1,5 +1,5 @@
 import { AuditAction } from "@/prisma";
-import { z } from "zod/v4";
+import { z } from "zod";
 export const ComplaintLogSchema = z.object({
   id: z.int(),
   complaintId: z.int(),
