@@ -4,6 +4,12 @@ generator client {
   moduleFormat = "cjs"
 }
 
+// generator zod {
+//   provider = "prisma-zod-generator"
+//   output   = "../generated/prisma/zod"
+//   config   = "./zod-generator.config.json"
+// }
+
 datasource db {
   provider = "postgresql"
 }

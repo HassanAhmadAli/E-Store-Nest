@@ -87,8 +87,8 @@
     "@types/jest": "^30.0.0",
     "@types/lodash": "^4.17.20",
     "@types/node": "^22.19.1",
-    "@types/pg": "^8.15.6",
     "@types/nodemailer": "^7.0.4",
+    "@types/pg": "^8.15.6",
     "@types/supertest": "^6.0.3",
     "@vitest/coverage-v8": "^3.2.4",
     "eslint": "^9.39.1",
@@ -127,5 +127,8 @@
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
+  },
+  "optionalDependencies": {
+    "prisma-zod-generator": "^2.1.2"
   }
 }
