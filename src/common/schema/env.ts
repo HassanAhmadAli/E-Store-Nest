@@ -5,7 +5,7 @@ export const NODE_ENV_Schema = z.enum(["development", "production", "test"]).def
 export const envSchema = z.object({
   NODE_ENV: NODE_ENV_Schema,
   PORT: z.coerce.number().int().min(0).max(65535).default(3000),
-  DATABASE_URL: z.string(),
+  DATABASE_URL: z.string().nonempty(),
   JWT_SECRET: z.string(),
   // identifies the audiance jwt is use for, like localhost:3000
   JWT_AUDIENCE: z.string().default("localhost:3000"),
