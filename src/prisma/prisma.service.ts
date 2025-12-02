@@ -6,9 +6,9 @@ import { EnvVariables } from "@/common/schema/env";
 const createPrismaClient = ({ DATABASE_URL }: { DATABASE_URL: string }) => {
   const adapter = new PrismaPg({
     connectionString: DATABASE_URL,
+    max: 20,
   });
-  const client = new PrismaClient({ adapter });
-  return client;
+  return new PrismaClient({ adapter });
 };
 @Injectable()
 export class PrismaService implements OnModuleInit, OnModuleDestroy {

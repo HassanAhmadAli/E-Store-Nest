@@ -66,5 +66,6 @@ import { MailerModule } from "@nestjs-modules/mailer";
       },
     }),
   ],
+  exports: [HashingService],
 })
 export class IdentityAndAccessManagementModule {}

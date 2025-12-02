@@ -10,7 +10,7 @@ import {
   AccessTokenPayloadSchema,
   RefreshTokenPayloadSchema,
   RefreshTokenPayload,
-  ActiveUserType,
+  type ActiveUserType,
 } from "./dto/request-user.dto";
 import { randomUUID, randomInt } from "node:crypto";
 import { RefreshTokenIdsStorage } from "./refresh-token-ids.storage";
@@ -24,8 +24,6 @@ import { VerifyEmailDto } from "./dto/verify-email.dto";
 
 @Injectable()
 export class AuthenticationService {
-  JWT_TTL!: DurationType;
-  JWT_REFRESH_TTL!: DurationType;
   constructor(
     private prisma: PrismaService,
     private readonly hashingService: HashingService,
@@ -35,10 +33,7 @@ export class AuthenticationService {
     private readonly refreshTokenIdsStorage: RefreshTokenIdsStorage,
     private readonly config: ConfigService<EnvVariables>,
     private readonly mailerService: MailerService,
-  ) {
-    this.JWT_TTL = this.config.get("JWT_TTL", { infer: true })!;
-    this.JWT_REFRESH_TTL = this.config.get("JWT_REFRESH_TTL", { infer: true })!;
-  }
+  ) {}
 
   async signup(signupDto: SignupDto) {
     const password = await this.hashingService.hash({ original: signupDto.password });
@@ -73,7 +68,10 @@ export class AuthenticationService {
     const { email, code } = verifyEmailDto;
 
     const user = await this.prisma.client.user.findUnique({
-      where: { email },
+      where: {
+        deletedAt: null,
+        email,
+      },
     });
 
     if (!user) {
@@ -92,7 +90,10 @@ export class AuthenticationService {
       throw new UnauthorizedException("Verification code has expired");
     }
     await this.prisma.client.user.update({
-      where: { id: user.id },
+      where: {
+        deletedAt: null,
+        id: user.id,
+      },
       data: {
         isVerified: true,
         verificationCode: null,
@@ -105,7 +106,10 @@ export class AuthenticationService {
   async signIn(signInDto: SigninDto) {
     const { email } = signInDto;
     const user = await this.prisma.client.user.findUnique({
-      where: { email },
+      where: {
+        deletedAt: null,
+        email,
+      },
       select: {
         email: true,
         password: true,
@@ -136,7 +140,12 @@ export class AuthenticationService {
   async signout(signoutDto: SignoutDto) {
     const user = await this.jwtService.verifyAsync<RefreshTokenPayload>(signoutDto.refreshToken);
     const id = user.sub;
-    const dbUser = await this.prisma.client.user.findUniqueOrThrow({ where: { id } });
+    const dbUser = await this.prisma.client.user.findUniqueOrThrow({
+      where: {
+        deletedAt: null,
+        id,
+      },
+    });
     const doesPasswordMatch = await this.hashingService.compare({
       original: signoutDto.password,
       encrypted: dbUser.password,
@@ -159,6 +168,7 @@ export class AuthenticationService {
     await this.refreshTokenIdsStorage.invalidate(sub);
     const user = await this.prisma.client.user.findUnique({
       where: {
+        deletedAt: null,
         id: sub,
       },
     });
@@ -180,8 +190,8 @@ export class AuthenticationService {
     });
 
     const [accessToken, refreshToken] = await Promise.all([
-      this.signMethod(accessTokenPayload, this.JWT_TTL),
-      this.signMethod(refreshTokenPayload, this.JWT_REFRESH_TTL),
+      this.signMethod(accessTokenPayload, this.config.getOrThrow("JWT_TTL", { infer: true })),
+      this.signMethod(refreshTokenPayload, this.config.getOrThrow("JWT_REFRESH_TTL", { infer: true })),
     ]);
 
     return { accessToken, refreshToken, refreshTokenId: refreshTokenPayload.refreshTokenId };

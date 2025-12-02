@@ -11,6 +11,7 @@ export class UserService {
   async updateProfile(updateUserDto: UpdateProfileDto, userId: number) {
     const user = await this.prismaService.client.user.update({
       where: {
+        deletedAt: null,
         id: userId,
       },
       data: updateUserDto,

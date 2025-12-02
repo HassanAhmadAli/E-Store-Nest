@@ -17,3 +17,6 @@ export const CreateUserSchema = z.object({
     return role;
   }),
 });
+export const CreateEmployeeSchema = CreateUserSchema.extend({
+  role: z.literal(Role.Employee),
+});

@@ -27,7 +27,6 @@ export class ComplaintsController {
     return { message: "Receive/Process" };
   }
 
-  //todo: Update Status
   @Patch(":id/status")
   async updateStatus(
     @Param("id", ParseIntPipe) complaintId: number,

@@ -1,28 +1,29 @@
-import { Controller, Delete, Get, Patch, Post } from "@nestjs/common";
+import { CreateEmployeeDto } from "@/user/dto/create-user.dto";
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post } from "@nestjs/common";
+import { StatisticsService } from "./statistics.service";
+import { ActiveUser, type ActiveUserType } from "@/iam/decorators/ActiveUser.decorator";
 @Controller("statistics")
 export class StatisticsController {
+  constructor(private readonly statisticsService: StatisticsService) {}
   //todo: Manage Statistics
   @Get()
   manageStatistics() {
     return { message: "Manage Statistics" };
   }
 
-  //todo: Add Employee
   @Post()
-  addEmployee() {
-    // (Role=Employee)
-    return { message: "Add Employee" };
+  async addEmployee(@Body() createEmployeeDto: CreateEmployeeDto, @ActiveUser("Admin") _user: ActiveUserType) {
+    return await this.statisticsService.addEmployee(createEmployeeDto);
   }
 
-  //todo: Promote to Admin
-  @Patch()
-  promoteToAdmin() {
-    return { message: "Promote to Manager" };
+  @Patch(":id")
+  async promoteToAdmin(@Param("id", ParseIntPipe) employeeId: number, @ActiveUser("Admin") _user: ActiveUserType) {
+    return await this.statisticsService.promoteToAdmin(employeeId);
   }
 
-  //todo: Delete Account
-  @Delete()
-  deleteAccount() {
-    return { message: "Delete Account" };
+  @Delete(":id")
+  async deleteAccount(@Param("id") userId: number, @ActiveUser("Admin") admin: ActiveUserType) {
+    const adminId = admin.sub;
+    return await this.statisticsService.deleteAccount(userId, adminId);
   }
 }

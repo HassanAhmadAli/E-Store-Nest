@@ -22,6 +22,7 @@ export class RolesGuard implements CanActivate {
     const user = req[Keys.User]!;
     const x = await this.prisma.client.user.findUniqueOrThrow({
       where: {
+        deletedAt: null,
         id: user.sub,
       },
     });

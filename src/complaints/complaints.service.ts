@@ -1,9 +1,8 @@
 import { ConflictException, Injectable } from "@nestjs/common";
 import { CreateComplaintDto } from "./dto/create-complaint.dto";
-import { Prisma, PrismaService, Complaint, Role } from "@/prisma";
+import { Prisma, PrismaService, Complaint } from "@/prisma";
 import { UpdateComplaintDto } from "./dto/update-complaint.dto";
 import { getKeysOfTrue } from "@/common/utils";
-import { logger } from "@/logger";
 
 @Injectable()
 export class ComplaintsService {
@@ -26,6 +25,7 @@ export class ComplaintsService {
   async getCitizenComplaints(citizenId: number) {
     return await this.prismaService.client.complaint.findMany({
       where: {
+        deletedAt: null,
         citizenId,
       },
       select: {
@@ -40,12 +40,13 @@ export class ComplaintsService {
 
   async updateStatus(complaintId: number, employeeId: number, updateComplaintDto: UpdateComplaintDto) {
     return await this.prismaService.client.$transaction(async (tx) => {
-      const complaints = await tx.$queryRaw<Complaint[]>`
+      const complaints = await tx.$queryRaw<Complaint[]>(Prisma.sql`
       SELECT *
       FROM "Complaint"
-      WHERE id = ${complaintId}
+      WHERE
+           "id" = ${complaintId} AND "deletedAt" IS NULL
       FOR UPDATE
-      `;
+      `);
       const complaint = complaints[0];
       if (complaint == undefined) {
         throw new ConflictException("Complaint does not exist");
@@ -57,6 +58,7 @@ export class ComplaintsService {
       //todo: set the logs
       const updatedComplaint = await tx.complaint.update({
         where: {
+          deletedAt: null,
           id: complaintId,
           assignedEmployeeId: employeeId,
         },
@@ -74,7 +76,7 @@ export class ComplaintsService {
       const complaints = await tx.$queryRaw<Pick<Prisma.ComplaintModel, "id" | "isArchived" | "assignedEmployeeId">[]>(
         Prisma.sql` SELECT id, "isArchived", "assignedEmployeeId"
       FROM "Complaint"
-      WHERE id = ${complaintId}
+      WHERE id = ${complaintId} AND deletedAt IS NULL
       FOR UPDATE
     `,
       );
@@ -90,6 +92,7 @@ export class ComplaintsService {
       }
       const updated = await tx.complaint.update({
         where: {
+          deletedAt: null,
           id: complaintId,
         },
         data: {
