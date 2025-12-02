@@ -1,8 +1,9 @@
 import { ConflictException, Injectable } from "@nestjs/common";
 import { CreateComplaintDto } from "./dto/create-complaint.dto";
-import { Prisma, PrismaService, Complaint } from "@/prisma";
+import { Prisma, PrismaService, Complaint, Role } from "@/prisma";
 import { UpdateComplaintDto } from "./dto/update-complaint.dto";
 import { getKeysOfTrue } from "@/common/utils";
+import { logger } from "@/logger";
 
 @Injectable()
 export class ComplaintsService {
@@ -66,6 +67,36 @@ export class ComplaintsService {
         } satisfies Prisma.ComplaintSelect,
       });
       return updatedComplaint;
+    });
+  }
+  async archiveComplaint(complaintId: number, userId: number) {
+    return await this.prismaService.client.$transaction(async (tx) => {
+      const complaints = await tx.$queryRaw<Pick<Prisma.ComplaintModel, "id" | "isArchived" | "assignedEmployeeId">[]>(
+        Prisma.sql` SELECT id, "isArchived", "assignedEmployeeId"
+      FROM "Complaint"
+      WHERE id = ${complaintId}
+      FOR UPDATE
+    `,
+      );
+      const complaint = complaints[0];
+      if (complaint == undefined) {
+        throw new ConflictException("Complaint Not Found");
+      }
+      if (complaint.isArchived === true) {
+        throw new ConflictException("Complaint already archived");
+      }
+      if (complaint.assignedEmployeeId !== userId) {
+        throw new ConflictException("Employee does not have permissions to archive this Complaint");
+      }
+      const updated = await tx.complaint.update({
+        where: {
+          id: complaintId,
+        },
+        data: {
+          isArchived: true,
+        },
+      });
+      return updated;
     });
   }
 }

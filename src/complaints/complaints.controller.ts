@@ -30,18 +30,17 @@ export class ComplaintsController {
   //todo: Update Status
   @Patch(":id/status")
   async updateStatus(
-    @Param("id", ParseIntPipe) id: number,
+    @Param("id", ParseIntPipe) complaintId: number,
     @Body() updateComplaintDto: UpdateComplaintDto,
     @ActiveUser("Employee") user: ActiveUserType,
   ) {
     const employeeId = user.sub;
-    return await this.complaintsService.updateStatus(id, employeeId, updateComplaintDto);
+    return await this.complaintsService.updateStatus(complaintId, employeeId, updateComplaintDto);
   }
 
-  //todo: Archive Complaint
   @Delete(":id/status")
-  archiveComplaint(@Param("id", ParseIntPipe) _id: number) {
-    return { message: "Archive Complaint" };
+  async archiveComplaint(@Param("id", ParseIntPipe) complaintId: number, @ActiveUser("Employee") user: ActiveUserType) {
+    return await this.complaintsService.archiveComplaint(complaintId, user.sub);
   }
 
   //todo: show and trace complaints for citizen

@@ -8,7 +8,7 @@ export type RequestWithActiveUser = express.Request & { [Keys.User]: ActiveUserT
 
 export const ActiveUser = createParamDecorator((role: Role | Array<Role> | undefined, ctx: ExecutionContext) => {
   const req = ctx.switchToHttp().getRequest<RequestWithActiveUser>();
-  const user: ActiveUserType = req[Keys.User];
+  const user: ActiveUserType = req[Keys.User]!;
   if (role == undefined) {
     return user;
   }

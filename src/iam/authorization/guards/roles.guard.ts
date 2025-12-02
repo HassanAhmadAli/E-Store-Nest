@@ -19,7 +19,7 @@ export class RolesGuard implements CanActivate {
       return true;
     }
     const req: RequestWithActiveUser = context.switchToHttp().getRequest<RequestWithActiveUser>();
-    const user = req[Keys.User];
+    const user = req[Keys.User]!;
     const x = await this.prisma.client.user.findUniqueOrThrow({
       where: {
         id: user.sub,
