@@ -5,7 +5,7 @@ import { prettifyError, ZodError } from "zod";
 
 @Catch(HttpException)
 export class HttpExceptionFilter extends BaseExceptionFilter {
-  catch(exception: HttpException, host: ArgumentsHost) {
+  override catch(exception: HttpException, host: ArgumentsHost) {
     if (exception instanceof ZodSerializationException || exception instanceof ZodValidationException) {
       const zodError = exception.getZodError();
       if (zodError instanceof ZodError) {

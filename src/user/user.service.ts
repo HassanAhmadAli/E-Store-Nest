@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { Prisma, PrismaService } from "@/prisma";
 import { Public } from "@/common/decorators/public.decorator";
 import { UpdateProfileDto } from "./dto/update-profile.dto";
-import { getKeysOfTrue } from "@/common/utils";
+import { getKeysOfTrue } from "@/utils";
 
 @Public()
 @Injectable()

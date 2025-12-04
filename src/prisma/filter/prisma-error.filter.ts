@@ -12,7 +12,7 @@ import { PrismaClientKnownRequestError } from "@/prisma";
 
 @Catch(PrismaClientKnownRequestError)
 export class PrismaServerErrorFilter extends BaseExceptionFilter {
-  catch(exception: PrismaClientKnownRequestError, host: ArgumentsHost) {
+  override catch(exception: PrismaClientKnownRequestError, host: ArgumentsHost) {
     switch (exception.code) {
       case "P2002": {
         const meta = exception.meta as { driverAdapterError?: { cause?: { originalMessage?: string } } };

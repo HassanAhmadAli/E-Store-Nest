@@ -2,16 +2,21 @@ import { ConflictException, Injectable } from "@nestjs/common";
 import { CreateComplaintDto } from "./dto/create-complaint.dto";
 import { Prisma, PrismaService, Complaint } from "@/prisma";
 import { UpdateComplaintDto } from "./dto/update-complaint.dto";
-import { getKeysOfTrue } from "@/common/utils";
+import { getKeysOfTrue } from "@/utils";
 
 @Injectable()
 export class ComplaintsService {
   constructor(private readonly prismaService: PrismaService) {}
+  private get prisma() {
+    return this.prismaService.client;
+  }
+
   async raiseComplaint(createComplaintDto: CreateComplaintDto, citizenId: number) {
-    return await this.prismaService.client.complaint.create({
+    return await this.prisma.complaint.create({
       data: {
         ...createComplaintDto,
         citizenId,
+        departmentId: 1,
       },
       select: {
         id: true,
@@ -22,8 +27,9 @@ export class ComplaintsService {
       },
     });
   }
+
   async getCitizenComplaints(citizenId: number) {
-    return await this.prismaService.client.complaint.findMany({
+    return await this.prisma.complaint.findMany({
       where: {
         deletedAt: null,
         citizenId,
@@ -34,12 +40,12 @@ export class ComplaintsService {
         description: true,
         status: true,
         assignedEmployeeId: true,
-      } as Prisma.ComplaintSelect,
+      } satisfies Prisma.ComplaintSelect,
     });
   }
 
   async updateStatus(complaintId: number, employeeId: number, updateComplaintDto: UpdateComplaintDto) {
-    return await this.prismaService.client.$transaction(async (tx) => {
+    return await this.prisma.$transaction(async (tx) => {
       const complaints = await tx.$queryRaw<Complaint[]>(Prisma.sql`
       SELECT *
       FROM "Complaint"
@@ -72,7 +78,7 @@ export class ComplaintsService {
     });
   }
   async archiveComplaint(complaintId: number, userId: number) {
-    return await this.prismaService.client.$transaction(async (tx) => {
+    return await this.prisma.$transaction(async (tx) => {
       const complaints = await tx.$queryRaw<Pick<Prisma.ComplaintModel, "id" | "isArchived" | "assignedEmployeeId">[]>(
         Prisma.sql` SELECT id, "isArchived", "assignedEmployeeId"
       FROM "Complaint"

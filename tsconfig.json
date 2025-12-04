@@ -7,12 +7,16 @@
     "esModuleInterop": true,
     "isolatedModules": true,
     "declaration": true,
+    "lib": [
+      "ES2022"
+    ],
     "removeComments": true,
     "emitDecoratorMetadata": true,
     "noUncheckedIndexedAccess": true,
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
-    "resolveJsonModule": true,
+    "allowJs": false,
+    "resolveJsonModule": false,
     "target": "ES2022",
     "sourceMap": true,
     "outDir": "out",
@@ -24,6 +28,9 @@
     "noImplicitAny": true,
     "strictBindCallApply": true,
     "noFallthroughCasesInSwitch": true,
+    "allowUnreachableCode": false,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
     "paths": {
       "@/*": [
         "src/*"

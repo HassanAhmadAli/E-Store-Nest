@@ -8,7 +8,7 @@ const createPrismaClient = ({ DATABASE_URL }: { DATABASE_URL: string }) => {
     connectionString: DATABASE_URL,
     max: 20,
   });
-  return new PrismaClient({ adapter });
+  return new PrismaClient({ adapter , log: ["query"] });
 };
 @Injectable()
 export class PrismaService implements OnModuleInit, OnModuleDestroy {

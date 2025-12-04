@@ -30,7 +30,7 @@ enum Role {
   Debugging
 }
 
-enum Priority {
+enum ComplaintPriority {
   Low
   Medium
   High
@@ -43,21 +43,48 @@ enum AuditAction {
   STATUS_CHANGE
 }
 
-model Complaint {
-  id          Int             @id @default(autoincrement())
-  title       String
-  description String
-  status      ComplaintStatus @default(Pending)
-  isArchived  Boolean         @default(false)
+model Department {
+  id          Int     @id @default(autoincrement())
+  // core fields
+  name        String  @unique
+  description String?
 
+  // relations
+  employees  User[]
+  complaints Complaint[]
+
+  //
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+}
+
+model Complaint {
+  id                Int               @id @default(autoincrement())
+  // core fields
+  referenceCode     String            @unique @default(uuid()) // Unique public reference
+  title             String
+  description       String
+  status            ComplaintStatus   @default(Pending)
+  complaintPriority ComplaintPriority @default(Medium)
+  isArchived        Boolean           @default(false)
+  location          String? // Or use Float for lat/lng if using maps
+  lockedAt          DateTime?
+
+  // forign keys
+  departmentId       Int
   citizenId          Int
   assignedEmployeeId Int?
-
-  citizen          User           @relation("CitizenComplaints", fields: [citizenId], references: [id], onDelete: Restrict)
-  assignedEmployee User?          @relation("EmployeeComplaints", fields: [assignedEmployeeId], references: [id], onDelete: SetNull)
-  logs             ComplaintLog[]
-  notifications    Notification[]
-  attachments      Attachment[]
+  lockedById         Int?
+  // relations
+  department         Department     @relation(fields: [departmentId], references: [id])
+  citizen            User           @relation("CitizenComplaints", fields: [citizenId], references: [id], onDelete: Restrict)
+  assignedEmployee   User?          @relation("EmployeeComplaints", fields: [assignedEmployeeId], references: [id], onDelete: SetNull)
+  lockedBy           User?          @relation("UserLockedComplaints", fields: [lockedById], references: [id])
+  logs               ComplaintLog[]
+  notifications      Notification[]
+  attachments        Attachment[]
+  comments           Comment[]
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -65,35 +92,71 @@ model Complaint {
 
   @@index([citizenId])
   @@index([assignedEmployeeId])
+  @@index([departmentId])
   @@index([status])
+  @@index([referenceCode])
 }
 
-model ComplaintLog {
-  id          Int         @id @default(autoincrement())
+model Comment {
+  id          Int    @id @default(autoincrement())
+  // core fields
+  content     String
+  // forigne keys
   complaintId Int
-  changedById Int
-  action      AuditAction
-  changes     Json
-  notes       String?
+  userId      Int
 
+  // relations
   complaint Complaint @relation(fields: [complaintId], references: [id])
-  changedBy User      @relation(fields: [changedById], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
 
+  //
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
+  //
+  @@index([complaintId])
+  @@index([userId])
+}
+
+model ComplaintLog {
+  id      Int         @id @default(autoincrement())
+  // core fields
+  action  AuditAction
+  changes Json
+  notes   String?
+
+  // forign keys 
+  complaintId Int
+  changedById Int
+  // relations
+  complaint   Complaint @relation(fields: [complaintId], references: [id])
+  changedBy   User      @relation(fields: [changedById], references: [id])
+
+  //
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  //
   @@index([complaintId])
 }
 
 model Attachment {
-  id          Int       @id @default(autoincrement())
-  fileUrl     String
-  fileType    String
-  fileSize    Int?
-  complaintId Int
-  complaint   Complaint @relation(fields: [complaintId], references: [id])
+  id Int @id @default(autoincrement())
 
+  // core fields
+  fileUrl  String
+  fileType String
+  fileSize Int?
+
+  // forign keys
+  complaintId Int
+
+  // relations
+  complaint Complaint @relation(fields: [complaintId], references: [id])
+
+  //
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
@@ -103,9 +166,10 @@ model Attachment {
 
 model User {
   id          Int     @id @default(autoincrement())
+  // core fields
   fullName    String
   email       String  @unique
-  phoneNumber String
+  phoneNumber String  @unique
   password    String
   nationalId  String  @unique
   role        Role
@@ -115,30 +179,47 @@ model User {
   verificationCode          String?
   verificationCodeExpiresAt DateTime?
 
+  // forign keys
+  departmentId Int?
+
+  // relations
+  department         Department?    @relation(fields: [departmentId], references: [id])
   complaintsFiled    Complaint[]    @relation("CitizenComplaints")
   complaintsAssigned Complaint[]    @relation("EmployeeComplaints")
+  complaints         Complaint[]    @relation("UserLockedComplaints")
   logsCreated        ComplaintLog[] // Tracks who updated a complaint status
   notifications      Notification[]
+  comments           Comment[]
 
+  //
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
+
+  //
+  @@index([departmentId])
+  @@index([email, role, id])
 }
 
 model Notification {
   id      Int     @id @default(autoincrement())
+  // core fields
   message String
   isRead  Boolean @default(false)
 
+  // forign keys
   userId      Int
   complaintId Int?
 
+  // relations
   user      User       @relation(fields: [userId], references: [id])
   complaint Complaint? @relation(fields: [complaintId], references: [id])
 
+  //
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  @@index([userId])
+  //
+  @@index([userId, complaintId])
 }

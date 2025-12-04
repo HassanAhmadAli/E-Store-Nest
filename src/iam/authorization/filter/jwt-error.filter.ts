@@ -6,7 +6,7 @@ import { JsonWebTokenError } from "@nestjs/jwt";
 @Catch(JsonWebTokenError)
 export class JwtErrorFilter extends BaseExceptionFilter {
   e: Error = new UnauthorizedException(ErrorMessages.INVALID_TOKEN);
-  catch(_exception: JsonWebTokenError, host: ArgumentsHost) {
+  override catch(_exception: JsonWebTokenError, host: ArgumentsHost) {
     super.catch(this.e, host);
   }
 }
