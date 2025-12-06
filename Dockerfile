@@ -24,7 +24,7 @@ ENV NODE_ENV=production
 COPY --from=builder /app/package.json /app/pnpm-lock.yaml /app/pnpm-workspace.yaml  ./
 RUN --mount=type=cache,target=/pnpm,id=pnpm_cache \
     pnpm install -P --frozen-lockfile
-COPY --from=builder /app/.env /app/out/ ./out/
+COPY --from=builder /app/.env /app/dist/ ./dist/
 
 
 CMD ["pnpm", "run", "start:prod"]

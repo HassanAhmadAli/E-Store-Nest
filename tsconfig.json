@@ -19,7 +19,7 @@
     "resolveJsonModule": false,
     "target": "ES2022",
     "sourceMap": true,
-    "outDir": "out",
+    "outDir": "dist",
     "baseUrl": "./",
     "incremental": true,
     "skipLibCheck": true,
