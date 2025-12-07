@@ -8,4 +8,5 @@ onlyBuiltDependencies:
   - esbuild
   - prisma
   - prisma-zod-generator
+  - puppeteer
   - unrs-resolver

@@ -3,12 +3,12 @@ import { PrismaClient } from "./prisma-client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { ConfigService } from "@nestjs/config";
 import { EnvVariables } from "@/common/schema/env";
-const createPrismaClient = ({ DATABASE_URL }: { DATABASE_URL: string }) => {
+export const createPrismaClient = ({ DATABASE_URL }: { DATABASE_URL: string }) => {
   const adapter = new PrismaPg({
     connectionString: DATABASE_URL,
     max: 20,
   });
-  return new PrismaClient({ adapter , log: ["query"] });
+  return new PrismaClient({ adapter, log: ["query", "error"] });
 };
 @Injectable()
 export class PrismaService implements OnModuleInit, OnModuleDestroy {

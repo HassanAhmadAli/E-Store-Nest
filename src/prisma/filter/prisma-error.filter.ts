@@ -1,51 +1,50 @@
 import { pino } from "@/logger/pino";
 import {
-  ArgumentsHost,
   BadRequestException,
   Catch,
   ConflictException,
+  ExceptionFilter,
   InternalServerErrorException,
   NotFoundException,
 } from "@nestjs/common";
-import { BaseExceptionFilter } from "@nestjs/core";
 import { PrismaClientKnownRequestError } from "@/prisma";
 
 @Catch(PrismaClientKnownRequestError)
-export class PrismaServerErrorFilter extends BaseExceptionFilter {
-  override catch(exception: PrismaClientKnownRequestError, host: ArgumentsHost) {
+export class PrismaServerErrorFilter implements ExceptionFilter {
+  catch(exception: PrismaClientKnownRequestError) {
     switch (exception.code) {
       case "P2002": {
         const meta = exception.meta as { driverAdapterError?: { cause?: { originalMessage?: string } } };
         const message = meta?.driverAdapterError?.cause?.originalMessage || "Unique constraint failed ";
         pino.debug({ "db-unique-constraint-failed": message });
-        return super.catch(new ConflictException(message), host);
+        throw new ConflictException(message);
       }
       case "P2003": {
         const fieldName = (exception.meta?.field_name as string) || "relation";
-        return super.catch(new BadRequestException(`Foreign key constraint failed on the field: ${fieldName}`), host);
+        throw new BadRequestException(`Foreign key constraint failed on the field: ${fieldName}`);
       }
       case "P2006": {
         const invalidField = (exception.meta?.field_name as string) || "a field";
-        return super.catch(new BadRequestException(`Invalid data provided for field: ${invalidField}`), host);
+        throw new BadRequestException(`Invalid data provided for field: ${invalidField}`);
       }
       case "P2011": {
         const constraint = (exception.meta?.constraint as string) || "a required field";
-        return super.catch(new BadRequestException(`Missing required value for ${constraint}.`), host);
+        throw new BadRequestException(`Missing required value for ${constraint}.`);
       }
       case "P2014": {
-        return super.catch(new BadRequestException("The requested change violates a required relation."), host);
+        throw new BadRequestException("The requested change violates a required relation.");
       }
       case "P2022": {
         pino.error({ prismaException: exception.message });
-        return super.catch(new InternalServerErrorException(`column does not exist in the current database`), host);
+        throw new InternalServerErrorException(`column does not exist in the current database`);
       }
       case "P2025": {
         const cause = exception.meta?.cause || "Record not found";
-        return super.catch(new NotFoundException(cause), host);
+        throw new NotFoundException(cause);
       }
       default: {
         pino.error({ prismaException: exception });
-        return super.catch(new BadRequestException(`Prisma Validation Error`), host);
+        throw new BadRequestException(`Prisma Validation Error`);
       }
     }
   }

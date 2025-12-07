@@ -33,7 +33,7 @@ export class AuthenticationService {
     private readonly refreshTokenIdsStorage: RefreshTokenIdsStorage,
     private readonly config: ConfigService<EnvVariables>,
     private readonly mailerService: MailerService,
-  ) { }
+  ) {}
 
   async signup(signupDto: SignupDto) {
     const password = await this.hashingService.hash({ original: signupDto.password });
@@ -55,7 +55,7 @@ export class AuthenticationService {
       },
     });
     if (NODE_ENV === "development") {
-      console.log(`you are using ${NODE_ENV} environment, the otp is ${verificationCode}`)
+      console.log(`you are using ${NODE_ENV} environment, the otp is ${verificationCode}`);
     }
     void this.mailerService.sendMail({
       to: signupDto.email,
