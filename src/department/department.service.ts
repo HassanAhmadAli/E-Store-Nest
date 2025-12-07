@@ -3,6 +3,7 @@ import { CreateDepartmentDto } from "./dto/create-department.dto";
 import { UpdateDepartmentDto } from "./dto/update-department.dto";
 import { PrismaService } from "@/prisma";
 import { PaginationQueryDto } from "@/common/dto/pagination-query.dto";
+import { logger } from "@/logger";
 
 @Injectable()
 export class DepartmentService {
@@ -22,34 +23,17 @@ export class DepartmentService {
     });
   }
 
-  async findAll({ limit, offset, deletedItems }: PaginationQueryDto) {
+  async findAll({ limit, offset, deletedAt, deleted }: PaginationQueryDto) {
+    logger.debug({ deleted, deletedAt });
     return await this.prisma.department.findMany({
       where: {
-        deletedAt: deletedItems ? { not: null } : null,
+        deletedAt,
       },
       select: {
         id: true,
         name: true,
         description: true,
-        deletedAt: deletedItems,
-      },
-      skip: offset,
-      take: limit,
-    });
-  }
-
-  async findAllArchived({ limit, offset }: PaginationQueryDto) {
-    return await this.prisma.department.findMany({
-      where: {
-        deletedAt: {
-          not: null,
-        },
-      },
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        deletedAt: true,
+        deletedAt: deleted,
       },
       skip: offset,
       take: limit,
@@ -59,7 +43,6 @@ export class DepartmentService {
   async findOne(id: number) {
     return await this.prisma.department.findUniqueOrThrow({
       where: {
-        deletedAt: null,
         id,
       },
       select: {
@@ -73,7 +56,6 @@ export class DepartmentService {
   async update(id: number, updateDepartmentDto: UpdateDepartmentDto) {
     const res = await this.prisma.department.update({
       where: {
-        deletedAt: null,
         id,
       },
       select: {
@@ -84,11 +66,11 @@ export class DepartmentService {
       data: updateDepartmentDto,
     });
     if (res == undefined) {
-      throw new ConflictException("Complaint Not Found");
+      throw new ConflictException("Department Not Found");
     }
     return res;
   }
-  async reactivateArchived(id: number) {
+  async unArchive(id: number) {
     const res = await this.prisma.department.update({
       where: {
         deletedAt: {
@@ -100,22 +82,20 @@ export class DepartmentService {
         id: true,
         name: true,
         description: true,
+        deletedAt: true,
       },
       data: {
         deletedAt: null,
       },
     });
     if (res == undefined) {
-      throw new ConflictException("Complaint Not Found");
+      throw new ConflictException("No Deleted Department with this id was found");
     }
     return res;
   }
-  async remove(id: number) {
+  async archive(id: number) {
     const res = await this.prisma.department.update({
       where: {
-        deletedAt: {
-          not: null,
-        },
         id,
       },
       select: {
@@ -128,7 +108,23 @@ export class DepartmentService {
       },
     });
     if (res == undefined) {
-      throw new ConflictException("Complaint Not Found");
+      throw new ConflictException("Department Not Found");
+    }
+    return res;
+  }
+  async delete(id: number) {
+    const res = await this.prisma.department.delete({
+      where: {
+        id,
+      },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+      },
+    });
+    if (res == undefined) {
+      throw new ConflictException("Department Not Found");
     }
     return res;
   }

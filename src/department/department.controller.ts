@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseIntPipe, ParseBoolPipe } from "@nestjs/common";
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseIntPipe } from "@nestjs/common";
 import { DepartmentService } from "./department.service";
 import { CreateDepartmentDto } from "./dto/create-department.dto";
 import { UpdateDepartmentDto } from "./dto/update-department.dto";
@@ -15,13 +15,13 @@ export class DepartmentController {
   }
 
   @Get()
-  async findAll(@Query() query: PaginationQueryDto, @ActiveUser("Admin") _user: ActiveUserType) {
+  async findAll(@Query() query: PaginationQueryDto, @ActiveUser() _user: ActiveUserType) {
     return await this.departmentService.findAll(query);
   }
 
   @Get(":id")
-  async findOne(@Param("id", ParseIntPipe) id: number, @ActiveUser("Admin") _user: ActiveUserType) {
-    return await this.departmentService.findOne(+id);
+  async findOne(@Param("id", ParseIntPipe) id: number) {
+    return await this.departmentService.findOne(id);
   }
 
   @Patch(":id")
@@ -30,16 +30,21 @@ export class DepartmentController {
     @Body() updateDepartmentDto: UpdateDepartmentDto,
     @ActiveUser("Admin") _user: ActiveUserType,
   ) {
-    return await this.departmentService.update(+id, updateDepartmentDto);
+    return await this.departmentService.update(id, updateDepartmentDto);
   }
 
-  @Patch("archived:id")
+  @Patch("archive/:id")
   async reactivateArchived(@Param("id", ParseIntPipe) id: number, @ActiveUser("Admin") _user: ActiveUserType) {
-    return await this.departmentService.reactivateArchived(id);
+    return await this.departmentService.unArchive(id);
   }
 
-  @Delete(":id")
-  async remove(@Param("id", ParseIntPipe) id: number, @ActiveUser("Admin") _user: ActiveUserType) {
-    return await this.departmentService.remove(+id);
+  @Delete("archive/:id")
+  async archive(@Param("id", ParseIntPipe) id: number, @ActiveUser("Admin") _user: ActiveUserType) {
+    return await this.departmentService.archive(id);
+  }
+
+  @Delete("delete/:id")
+  async delete(@Param("id", ParseIntPipe) id: number, @ActiveUser("Admin") _user: ActiveUserType) {
+    return await this.departmentService.delete(id);
   }
 }

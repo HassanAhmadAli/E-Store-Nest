@@ -1,5 +1,5 @@
 import { HashingService } from "@/iam/hashing/hashing.service";
-import { createPrismaClient, Role } from "@/prisma";
+import { PrismaClient, Role } from "@/prisma";
 export const debuggingUser = {
   email: `${Role.Debugging}.user@example.com`,
   fullName: `${Role.Debugging}`,
@@ -8,7 +8,7 @@ export const debuggingUser = {
   role: Role.Debugging,
 };
 
-export async function seedUsers(hashingService: HashingService, prisma: ReturnType<typeof createPrismaClient>) {
+export async function seedUsers(hashingService: HashingService, prisma: PrismaClient) {
   const password = await hashingService.hash({
     original: "12345678",
   });

@@ -1,7 +1,8 @@
 import { envSchema } from "@/common/schema/env";
 import { Argon2Service } from "@/iam/hashing/argon2.service";
-import { createPrismaClient, PrismaClientKnownRequestError, Role } from "@/prisma";
+import { PrismaClient, PrismaClientKnownRequestError } from "@/prisma";
 import { seedUsers } from "./user";
+import { PrismaPg } from "@prisma/adapter-pg";
 
 const env = envSchema
   .pick({
@@ -9,9 +10,11 @@ const env = envSchema
   })
   .parse(process.env);
 
-const prisma = createPrismaClient({
-  DATABASE_URL: env.DATABASE_URL,
+const adapter = new PrismaPg({
+  connectionString: env.DATABASE_URL,
+  max: 20,
 });
+const prisma = new PrismaClient({ adapter });
 
 async function seed() {
   const hashingService = new Argon2Service();
