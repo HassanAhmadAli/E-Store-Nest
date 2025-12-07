@@ -13,6 +13,7 @@ import { UserModule } from "./user/user.module";
 import { ComplaintsModule } from "./complaints/complaints.module";
 import { NotificationsModule } from "./notifications/notifications.module";
 import { StatisticsModule } from "./statistics/statistics.module";
+import { DepartmentModule } from "./department/department.module";
 import KeyvRedis from "@keyv/redis";
 import morgan from "morgan";
 @Module({
@@ -45,6 +46,7 @@ import morgan from "morgan";
     ComplaintsModule,
     NotificationsModule,
     StatisticsModule,
+    DepartmentModule,
   ],
   controllers: [],
   providers: [

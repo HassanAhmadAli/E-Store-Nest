@@ -5,7 +5,8 @@ generator client {
   engineType   = "client"
 }
 
-//turn off
+// // // // turn off
+
 // generator zod {
 //   provider = "prisma-zod-generator"
 //   output   = "../generated/prisma/zod"
