@@ -33,12 +33,13 @@ export class AuthenticationService {
     private readonly refreshTokenIdsStorage: RefreshTokenIdsStorage,
     private readonly config: ConfigService<EnvVariables>,
     private readonly mailerService: MailerService,
-  ) {}
+  ) { }
 
   async signup(signupDto: SignupDto) {
     const password = await this.hashingService.hash({ original: signupDto.password });
     const NODE_ENV = this.config.get("NODE_ENV", { infer: true });
     const verificationCode = (NODE_ENV === "production" ? randomInt(10000000, 99999999) : 12345678).toString();
+
     const verificationCodeExpiresAt = new Date(Date.now() + 15 * 60 * 1000);
     const _user = await this.prisma.client.user.create({
       data: {
@@ -53,7 +54,10 @@ export class AuthenticationService {
         email: true,
       },
     });
-    await this.mailerService.sendMail({
+    if (NODE_ENV === "development") {
+      console.log(`you are using ${NODE_ENV} environment, the otp is ${verificationCode}`)
+    }
+    void this.mailerService.sendMail({
       to: signupDto.email,
       subject: "Welcome! Verify your Email",
       html: `
