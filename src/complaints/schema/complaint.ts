@@ -7,4 +7,5 @@ export const CreateComplaintSchema = z.object({
   status: z.enum(ComplaintStatus).optional(),
   isArchived: z.boolean().optional(),
   assignedEmployeeId: z.int().optional(),
+  departmentId: z.int(),
 });

@@ -15,7 +15,6 @@ export class ComplaintsService {
       data: {
         ...createComplaintDto,
         citizenId,
-        departmentId: 1,
       },
       select: {
         id: true,

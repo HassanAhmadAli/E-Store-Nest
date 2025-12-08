@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseIntPipe } from "@nestjs/common";
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+  ParseIntPipe,
+  UnauthorizedException,
+} from "@nestjs/common";
 import { DepartmentService } from "./department.service";
 import { CreateDepartmentDto } from "./dto/create-department.dto";
 import { UpdateDepartmentDto } from "./dto/update-department.dto";
@@ -15,7 +26,10 @@ export class DepartmentController {
   }
 
   @Get()
-  async findAll(@Query() query: PaginationQueryDto, @ActiveUser() _user: ActiveUserType) {
+  async findAll(@Query() query: PaginationQueryDto, @ActiveUser() user: ActiveUserType) {
+    if (query.deleted && !(user.role === "Admin" || user.role === "Debugging")) {
+      throw new UnauthorizedException("you does not have permissions to see deleted items");
+    }
     return await this.departmentService.findAll(query);
   }
 

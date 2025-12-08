@@ -3,15 +3,17 @@ import { Argon2Service } from "@/iam/hashing/argon2.service";
 import { PrismaClient, PrismaClientKnownRequestError } from "@/prisma";
 import { seedUsers } from "./user";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { seedDepartments } from "./department";
+import { seedComplaints } from "./complaints";
 
-const env = envSchema
+const { DATABASE_URL } = envSchema
   .pick({
     DATABASE_URL: true,
   })
   .parse(process.env);
 
 const adapter = new PrismaPg({
-  connectionString: env.DATABASE_URL,
+  connectionString: DATABASE_URL,
   max: 20,
 });
 const prisma = new PrismaClient({ adapter });
@@ -19,7 +21,10 @@ const prisma = new PrismaClient({ adapter });
 async function seed() {
   const hashingService = new Argon2Service();
   await seedUsers(hashingService, prisma);
+  await seedDepartments(prisma);
+  await seedComplaints(prisma);
 }
+
 async function bootstrap() {
   try {
     await seed();

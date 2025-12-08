@@ -7,11 +7,11 @@ generator client {
 
 // // // // turn off
 
-// generator zod {
-//   provider = "prisma-zod-generator"
-//   output   = "../generated/prisma/zod"
-//   config   = "./zod-generator.config.json"
-// }
+generator zod {
+  provider = "prisma-zod-generator"
+  output   = "../generated/prisma/zod"
+  config   = "./zod-generator.config.json"
+}
 
 datasource db {
   provider = "postgresql"
