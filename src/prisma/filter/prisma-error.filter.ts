@@ -8,43 +8,45 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { PrismaClientKnownRequestError } from "@/prisma";
+import { logger } from "@/logger";
 
 @Catch(PrismaClientKnownRequestError)
 export class PrismaServerErrorFilter implements ExceptionFilter {
-  catch(exception: PrismaClientKnownRequestError) {
+  catch(
+    exception: PrismaClientKnownRequestError & {
+      meta: { driverAdapterError?: { cause?: { originalMessage?: string } } };
+    },
+  ) {
+    const originalMessage = exception.meta.driverAdapterError?.cause?.originalMessage;
     switch (exception.code) {
       case "P2002": {
-        const meta = exception.meta as { driverAdapterError?: { cause?: { originalMessage?: string } } };
-        const message = meta?.driverAdapterError?.cause?.originalMessage || "Unique constraint failed ";
-        pino.debug({ "db-unique-constraint-failed": message });
-        throw new ConflictException(message);
+        throw new ConflictException(originalMessage || "Database Unique Constraint Failed");
       }
       case "P2003": {
-        const fieldName = (exception.meta?.field_name as string) || "relation";
-        throw new BadRequestException(`Foreign key constraint failed on the field: ${fieldName}`);
+        throw new BadRequestException(originalMessage || "Foreign key constraint Failed");
       }
       case "P2006": {
-        const invalidField = (exception.meta?.field_name as string) || "a field";
-        throw new BadRequestException(`Invalid data provided for field: ${invalidField}`);
+        throw new BadRequestException(originalMessage || "Invalid data provided for Field");
       }
       case "P2011": {
-        const constraint = (exception.meta?.constraint as string) || "a required field";
-        throw new BadRequestException(`Missing required value for ${constraint}.`);
+        throw new BadRequestException(originalMessage || "Missing required value");
       }
       case "P2014": {
-        throw new BadRequestException("The requested change violates a required relation.");
+        throw new BadRequestException(originalMessage || "The requested change violates a required relation.");
       }
       case "P2022": {
-        pino.error({ prismaException: exception.message });
-        throw new InternalServerErrorException(`column does not exist in the current database`);
+        throw new InternalServerErrorException(originalMessage || "column does not exist in the current database");
       }
       case "P2025": {
-        const cause = exception.meta?.cause || "Record not found";
-        throw new NotFoundException(cause);
+        throw new NotFoundException(originalMessage || "Record not found");
       }
       default: {
-        pino.error({ prismaException: exception });
-        throw new BadRequestException(`Prisma Validation Error`);
+        logger.error({
+          caller: "PrismaServerErrorFilter",
+          message: "unknown Exception",
+          value: exception,
+        });
+        throw new BadRequestException(originalMessage || `Prisma Validation Error`);
       }
     }
   }
