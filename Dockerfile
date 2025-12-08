@@ -6,7 +6,8 @@ ENV PORT=3000
 ENV IS_DOCKER=true
 RUN --mount=type=cache,target=/root/.npm,id=npm_cache \
     npm install -g pnpm &&\
-    pnpm config set store-dir $PNPM_HOME
+    pnpm config set store-dir $PNPM_HOME &&\
+    pnpm config set prefer-offline
 
 FROM base AS builder
 WORKDIR /app
@@ -15,7 +16,6 @@ COPY .docker.env ./.env
 RUN --mount=type=cache,target=/pnpm,id=pnpm_cache \
     --mount=type=cache,target=/app/node_modules/,id=app_node_modules \
     pnpm install --frozen-lockfile &&\
-    pnpm run db:generate &&\
     pnpm run build
 
 FROM base AS runner
@@ -25,7 +25,6 @@ COPY --from=builder /app/package.json /app/pnpm-lock.yaml /app/pnpm-workspace.ya
 RUN --mount=type=cache,target=/pnpm,id=pnpm_cache \
     pnpm install -P --frozen-lockfile
 COPY --from=builder /app/.env /app/dist/ ./dist/
-
 
 CMD ["pnpm", "run", "start:prod"]
 EXPOSE 3000

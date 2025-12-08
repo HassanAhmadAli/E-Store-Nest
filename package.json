@@ -23,7 +23,7 @@
     "db:seed": "prisma db seed",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev --name e-store",
-    "db:reset": "pnpm prisma migrate reset && prisma migrate dev --name e-store && pnpm prisma generate && pnpm run db:seed",
+    "db:reset": "pnpm prisma migrate reset --force && prisma migrate dev --name e-store && pnpm prisma generate && pnpm run db:seed",
     "db:studio": "prisma studio",
     "debug:circular-dependency": "npm run build && madge dist/src/main.js --circular"
   },
