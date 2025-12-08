@@ -1,4 +1,3 @@
-import { pino } from "@/logger/pino";
 import {
   BadRequestException,
   Catch,

@@ -3,7 +3,6 @@ import { CreateComplaintDto } from "./dto/create-complaint.dto";
 import { Prisma, PrismaService, Complaint } from "@/prisma";
 import { UpdateComplaintDto } from "./dto/update-complaint.dto";
 import { getKeysOfTrue } from "@/utils";
-
 @Injectable()
 export class ComplaintsService {
   constructor(private readonly prismaService: PrismaService) {}
