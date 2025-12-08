@@ -2,7 +2,7 @@ import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from
 import { Reflector } from "@nestjs/core";
 import { JwtService } from "@nestjs/jwt";
 import { ErrorMessages, Keys } from "@/common/const";
-import { AccessTokenPayloadSchema } from "../dto/request-user.dto";
+import { ActiveUserSchema } from "../dto/request-user.dto";
 import { RequestWithActiveUser } from "@/iam/decorators/ActiveUser.decorator";
 @Injectable()
 export class AccessTokenGuard implements CanActivate {
@@ -17,7 +17,7 @@ export class AccessTokenGuard implements CanActivate {
       throw new UnauthorizedException(ErrorMessages.ACCESS_TOKEN_NOT_PROVIDED);
     }
     const payLoad: object = await this.jwtService.verifyAsync(token);
-    req[Keys.User] = AccessTokenPayloadSchema.parse(payLoad);
+    req[Keys.User] = ActiveUserSchema.parse(payLoad);
     return true;
   }
   private extractTokenFromHeader(req: RequestWithActiveUser): string | undefined {

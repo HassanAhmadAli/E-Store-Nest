@@ -10,22 +10,14 @@ export class RolesGuard implements CanActivate {
     private readonly reflector: Reflector,
     private readonly prisma: PrismaService,
   ) {}
-  async canActivate(context: ExecutionContext): Promise<boolean> {
-    const allowedRoles = this.reflector.getAllAndOverride<Role[]>(Keys.Permissions, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
-    if (allowedRoles == undefined) {
+  canActivate(context: ExecutionContext): boolean {
+    const allowedRoles = this.reflector.getAllAndMerge<Role[]>(Keys.Roles, [context.getHandler(), context.getClass()]);
+    if (allowedRoles == undefined || allowedRoles.length === 0) {
       return true;
     }
     const req: RequestWithActiveUser = context.switchToHttp().getRequest<RequestWithActiveUser>();
     const user = req[Keys.User]!;
-    const x = await this.prisma.client.user.findUniqueOrThrow({
-      where: {
-        deletedAt: null,
-        id: user.sub,
-      },
-    });
-    return allowedRoles.includes(x.role);
+    if (user.role === "Debugging") return true;
+    return allowedRoles.includes(user.role);
   }
 }

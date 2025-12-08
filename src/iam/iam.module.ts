@@ -12,6 +12,7 @@ import { APP_FILTER, APP_GUARD } from "@nestjs/core";
 import { AuthenticationGuard } from "./authentication/guard/authentication.guard";
 import { JwtErrorFilter } from "./authorization/filter/jwt-error.filter";
 import { MailerModule } from "@nestjs-modules/mailer";
+import { RolesGuard } from "./authorization/guards/roles.guard";
 
 @Module({
   controllers: [AuthenticationController],
@@ -22,6 +23,10 @@ import { MailerModule } from "@nestjs-modules/mailer";
     {
       provide: APP_GUARD,
       useClass: AuthenticationGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
     },
     {
       provide: HashingService,

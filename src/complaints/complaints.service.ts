@@ -29,7 +29,6 @@ export class ComplaintsService {
   async getCitizenComplaints(citizenId: number) {
     return await this.prisma.complaint.findMany({
       where: {
-        deletedAt: null,
         citizenId,
       },
       select: {
@@ -62,7 +61,6 @@ export class ComplaintsService {
       //todo: set the logs
       const updatedComplaint = await tx.complaint.update({
         where: {
-          deletedAt: null,
           id: complaintId,
           assignedEmployeeId: employeeId,
         },
@@ -96,7 +94,6 @@ export class ComplaintsService {
       }
       const updated = await tx.complaint.update({
         where: {
-          deletedAt: null,
           id: complaintId,
         },
         data: {

@@ -5,17 +5,17 @@ import { faker } from "@faker-js/faker";
 import _ from "lodash";
 const user = usersData.Citizen;
 export const data = Array.from({ length: 10 }, (_, id) => {
-    const department = departmentsData[id % departmentsData.length]!;
-    return {
-        id,
-        title: faker.lorem.words(4),
-        description: faker.lorem.words(26),
-        citizenId: user.id,
-        departmentId: department.id,
-    };
+  const department = departmentsData[id % departmentsData.length]!;
+  return {
+    id,
+    title: faker.lorem.words(4),
+    description: faker.lorem.words(26),
+    citizenId: user.id,
+    departmentId: department.id,
+  };
 });
 export async function seedComplaints(prisma: PrismaClient) {
-    await prisma.complaint.createMany({
-        data: data,
-    });
+  await prisma.complaint.createMany({
+    data: data,
+  });
 }

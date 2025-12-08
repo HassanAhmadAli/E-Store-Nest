@@ -7,25 +7,27 @@ import _ from "lodash";
 import { DurationType } from "@/common/schema/duration-schema";
 import { RefreshTokenDto } from "./dto/refresh-token.dto";
 import {
-  AccessTokenPayloadSchema,
+  ActiveUserSchema,
   RefreshTokenPayloadSchema,
   RefreshTokenPayload,
   type ActiveUserType,
+  ActiveUserInput,
 } from "./dto/request-user.dto";
 import { randomUUID, randomInt } from "node:crypto";
 import { RefreshTokenIdsStorage } from "./refresh-token-ids.storage";
-import { PrismaService } from "@/prisma";
+import { Prisma, PrismaService, User } from "@/prisma";
 import { ErrorMessages } from "@/common/const";
 import { ConfigService } from "@nestjs/config";
 import { EnvVariables } from "@/common/schema/env";
 import { SignoutDto } from "./dto/signout.dto";
 import { MailerService } from "@nestjs-modules/mailer";
 import { VerifyEmailDto } from "./dto/verify-email.dto";
+import { logger } from "@/logger";
 
 @Injectable()
 export class AuthenticationService {
   constructor(
-    private prisma: PrismaService,
+    private prismaService: PrismaService,
     private readonly hashingService: HashingService,
     @Inject(JwtService)
     private readonly jwtService: JwtService,
@@ -33,18 +35,22 @@ export class AuthenticationService {
     private readonly refreshTokenIdsStorage: RefreshTokenIdsStorage,
     private readonly config: ConfigService<EnvVariables>,
     private readonly mailerService: MailerService,
-  ) {}
+  ) {
+    this.NODE_ENV = this.config.getOrThrow("NODE_ENV", { infer: true });
+  }
+  private NODE_ENV: EnvVariables["NODE_ENV"];
+  public get prisma() {
+    return this.prismaService.client;
+  }
 
-  async signup(signupDto: SignupDto) {
-    const password = await this.hashingService.hash({ original: signupDto.password });
-    const NODE_ENV = this.config.get("NODE_ENV", { infer: true });
-    const verificationCode = (NODE_ENV === "production" ? randomInt(10000000, 99999999) : 12345678).toString();
-
+  async signup({ password: rawPassword, ...signupDto }: SignupDto) {
+    const encryptedPassword = await this.hashingService.hash({ raw: rawPassword });
+    const verificationCode = (this.NODE_ENV === "production" ? randomInt(10000000, 99999999) : 12345678).toString();
     const verificationCodeExpiresAt = new Date(Date.now() + 15 * 60 * 1000);
-    const _user = await this.prisma.client.user.create({
+    await this.prisma.user.create({
       data: {
-        ..._.omit(signupDto, ["password"]),
-        password,
+        ...signupDto,
+        password: encryptedPassword,
         isVerified: false,
         verificationCode,
         verificationCodeExpiresAt,
@@ -54,8 +60,10 @@ export class AuthenticationService {
         email: true,
       },
     });
-    if (NODE_ENV === "development") {
-      console.log(`you are using ${NODE_ENV} environment, the otp is ${verificationCode}`);
+    if (this.NODE_ENV === "development") {
+      const message = `you are using ${this.NODE_ENV} environment, the otp is ${verificationCode}`;
+      logger.debug({ message });
+      return { message };
     }
     void this.mailerService.sendMail({
       to: signupDto.email,
@@ -68,131 +76,128 @@ export class AuthenticationService {
     });
     return { message: "User created. Please check your email for verification code." };
   }
-  async verifyEmail(verifyEmailDto: VerifyEmailDto) {
-    const { email, code } = verifyEmailDto;
 
-    const user = await this.prisma.client.user.findUnique({
-      where: {
-        deletedAt: null,
-        email,
-      },
+  async verifyEmail({ email, code }: VerifyEmailDto) {
+    return await this.prisma.$transaction(async (tx) => {
+      const queryResult = await tx.$queryRaw<User[] | undefined>(Prisma.sql`
+        SELECT * FROM "User"
+          WHERE "email" = ${email}
+          FOR UPDATE
+      `);
+      if (queryResult == undefined || queryResult.length === 0) {
+        throw new UnauthorizedException();
+      }
+      const user = queryResult[0]!;
+      if (user.isVerified) {
+        throw new BadRequestException("User is already verified");
+      }
+
+      if (user.verificationCode !== code) {
+        throw new UnauthorizedException("Invalid verification code");
+      }
+
+      if (user.verificationCodeExpiresAt != undefined && user.verificationCodeExpiresAt < new Date()) {
+        throw new UnauthorizedException("Verification code has expired");
+      }
+
+      await tx.user.update({
+        where: {
+          id: user.id,
+        },
+        data: {
+          isVerified: true,
+          verificationCode: null,
+          verificationCodeExpiresAt: null,
+        },
+      });
+
+      return { message: "Account Verified Successfully, please login" };
     });
-
-    if (!user) {
-      throw new UnauthorizedException(ErrorMessages.USER_DOES_NOT_EXIST);
-    }
-
-    if (user.isVerified) {
-      throw new BadRequestException("User is already verified");
-    }
-
-    if (user.verificationCode !== code) {
-      throw new UnauthorizedException("Invalid verification code");
-    }
-
-    if (user.verificationCodeExpiresAt && user.verificationCodeExpiresAt < new Date()) {
-      throw new UnauthorizedException("Verification code has expired");
-    }
-    await this.prisma.client.user.update({
-      where: {
-        deletedAt: null,
-        id: user.id,
-      },
-      data: {
-        isVerified: true,
-        verificationCode: null,
-        verificationCodeExpiresAt: null,
-      },
-    });
-    return { message: "Account Verified Successfully, please login" };
   }
 
-  async signIn(signInDto: SigninDto) {
-    const { email } = signInDto;
-    const user = await this.prisma.client.user.findUnique({
+  async signIn({ email, password: rawPassword }: SigninDto) {
+    const user = await this.prisma.user.findUniqueOrThrow({
       where: {
-        deletedAt: null,
         email,
       },
       select: {
-        email: true,
         password: true,
         id: true,
         role: true,
         isVerified: true,
       },
     });
-    if (user == undefined) {
-      throw new UnauthorizedException(ErrorMessages.USER_DOES_NOT_EXIST);
-    }
+
     if (!user.isVerified) {
       throw new UnauthorizedException("Please verify your email before logging in.");
     }
+
     const doesPasswordMatch = await this.hashingService.compare({
-      original: signInDto.password,
+      raw: rawPassword,
       encrypted: user.password,
     });
+
     if (!doesPasswordMatch) {
       throw new UnauthorizedException(ErrorMessages.PASSWORD_INCORRECT);
     }
-    const signedData = { sub: user.id, email: user.email, role: user.role };
-    const generatedTokens = await this.generateTokens(signedData);
-    await this.refreshTokenIdsStorage.insert(user.id, generatedTokens.refreshTokenId);
-    return _.omit(generatedTokens, ["refreshTokenId"]);
+    const signedData = { email, sub: user.id, role: user.role };
+    const { refreshTokenId, ...generatedTokens } = await this.generateTokens(signedData);
+    await this.refreshTokenIdsStorage.insert(user.id, refreshTokenId);
+    return generatedTokens;
   }
 
-  async signout(signoutDto: SignoutDto) {
-    const user = await this.jwtService.verifyAsync<RefreshTokenPayload>(signoutDto.refreshToken);
-    const id = user.sub;
-    const dbUser = await this.prisma.client.user.findUniqueOrThrow({
+  async signout({ refreshToken, password: rawPassword }: SignoutDto) {
+    const { sub: userId } = await this.jwtService.verifyAsync<RefreshTokenPayload>(refreshToken);
+    const user = await this.prisma.user.findUniqueOrThrow({
       where: {
-        deletedAt: null,
-        id,
+        id: userId,
+      },
+      select: {
+        password: true,
       },
     });
+
     const doesPasswordMatch = await this.hashingService.compare({
-      original: signoutDto.password,
-      encrypted: dbUser.password,
+      raw: rawPassword,
+      encrypted: user.password,
     });
-    if (doesPasswordMatch) {
-      await this.refreshTokenIdsStorage.invalidate(user.sub);
-      return;
-    } else {
+
+    if (!doesPasswordMatch) {
       return new UnauthorizedException("Incorrect Password");
     }
+    return await this.refreshTokenIdsStorage.invalidate(userId);
   }
-  async refreshTokens(refreshTokensDto: RefreshTokenDto) {
-    const refreshTokenPayload = await this.jwtService.verifyAsync<RefreshTokenPayload>(refreshTokensDto.refreshToken);
-
-    const { refreshTokenId, sub } = refreshTokenPayload;
-    const isValid = await this.refreshTokenIdsStorage.validate(sub, refreshTokenId);
+  async refreshTokens({ refreshToken }: RefreshTokenDto) {
+    const { refreshTokenId, sub: userId } = await this.jwtService.verifyAsync<RefreshTokenPayload>(refreshToken);
+    const isValid = await this.refreshTokenIdsStorage.validate(userId, refreshTokenId);
     if (!isValid) {
-      throw new UnauthorizedException();
+      throw new UnauthorizedException("Refresh Token Expired");
     }
-    await this.refreshTokenIdsStorage.invalidate(sub);
-    const user = await this.prisma.client.user.findUnique({
+    await this.refreshTokenIdsStorage.invalidate(userId);
+    const user = await this.prisma.user.findUniqueOrThrow({
       where: {
-        deletedAt: null,
-        id: sub,
+        id: userId,
+      },
+      select: {
+        role: true,
+        email: true,
       },
     });
-    if (user == undefined) {
-      throw new UnauthorizedException("user not found");
-    }
-    const generatedTokens = await this.generateTokens(refreshTokenPayload);
-    await this.refreshTokenIdsStorage.insert(sub, generatedTokens.refreshTokenId);
-    return _.omit(generatedTokens, ["refreshTokenId"]);
+    const newRefreshTokenPayload = { sub: userId, email: user.email, role: user.role };
+    const { refreshTokenId: oldRefreshTokenId, ...generateTokens } = await this.generateTokens(newRefreshTokenPayload);
+    await this.refreshTokenIdsStorage.insert(userId, oldRefreshTokenId);
+    return generateTokens;
   }
-  public async generateTokens(payLoadDto: ActiveUserType) {
+  public async generateTokens(payLoadDto: ActiveUserInput) {
     const refreshTokenPayload = RefreshTokenPayloadSchema.parse({
       ...payLoadDto,
       refreshTokenId: `userId=${payLoadDto.sub.toString()}.${randomUUID()}`,
+      tokenType: "refresh",
     });
-    const accessTokenPayload = AccessTokenPayloadSchema.parse({
-      ...refreshTokenPayload,
+    const accessTokenPayload = ActiveUserSchema.parse({
+      ...payLoadDto,
       tokenType: "access",
     });
-
     const [accessToken, refreshToken] = await Promise.all([
       this.signMethod(accessTokenPayload, this.config.getOrThrow("JWT_TTL", { infer: true })),
       this.signMethod(refreshTokenPayload, this.config.getOrThrow("JWT_REFRESH_TTL", { infer: true })),
@@ -200,7 +205,7 @@ export class AuthenticationService {
 
     return { accessToken, refreshToken, refreshTokenId: refreshTokenPayload.refreshTokenId };
   }
-  private async signMethod<T extends ActiveUserType>(signedData: T, expiresIn: DurationType) {
+  private async signMethod(signedData: ActiveUserType | RefreshTokenPayload, expiresIn: DurationType) {
     return await this.jwtService.signAsync(signedData, {
       expiresIn,
     } satisfies JwtSignOptions);

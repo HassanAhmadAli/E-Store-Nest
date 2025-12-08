@@ -1,9 +1,8 @@
 import { prettifyError, z } from "zod";
 import { durationSchema } from "@/common/schema/duration-schema";
-export const NODE_ENV_Schema = z.enum(["development", "production", "test"]).default("development");
 
 export const envSchema = z.object({
-  NODE_ENV: NODE_ENV_Schema,
+  NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   PORT: z.coerce.number().int().min(0).max(65535).default(3000),
   DATABASE_URL: z.string().nonempty(),
   JWT_SECRET: z.string(),
@@ -19,6 +18,7 @@ export const envSchema = z.object({
   APP_EMAIL_HOST: z.string(),
   APP_EMAIL_User: z.email(),
   APP_EMAIL_Password: z.string(),
+  ENABLE_Devtools: z.stringbool().default(false),
 });
 export const validateEnv = (input: Record<string, any>) => {
   const { data, error, success } = envSchema.safeParse(input);

@@ -45,7 +45,7 @@ export async function seedUsers(hashingService: HashingService, prisma: PrismaCl
   for (const key of getKeyOf(data)) {
     const userData = data[key];
     const password = await hashingService.hash({
-      original: userData.password,
+      raw: userData.password,
     });
     await prisma.user.create({
       data: {

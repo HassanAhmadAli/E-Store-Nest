@@ -16,6 +16,7 @@ import { StatisticsModule } from "./statistics/statistics.module";
 import { DepartmentModule } from "./department/department.module";
 import KeyvRedis from "@keyv/redis";
 import morgan from "morgan";
+import { env } from "@/common/env";
 @Module({
   imports: [
     CacheModule.registerAsync({
@@ -27,9 +28,11 @@ import morgan from "morgan";
         stores: [new KeyvRedis(configService.getOrThrow("REDIS_DATABASE_URL", { infer: true }), {})],
       }),
     }),
-    DevtoolsModule.register({
-      http: true,
-    }),
+    env!.ENABLE_Devtools
+      ? DevtoolsModule.register({
+          http: true,
+        })
+      : CommonModule,
     ConfigModule.forRoot({
       isGlobal: true,
       load: [

@@ -5,6 +5,7 @@ import { seedUsers } from "./user";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { seedDepartments } from "./department";
 import { seedComplaints } from "./complaints";
+import { logger } from "@/logger";
 
 const { DATABASE_URL } = envSchema
   .pick({
@@ -30,10 +31,9 @@ async function bootstrap() {
     await seed();
   } catch (e) {
     if (e instanceof PrismaClientKnownRequestError) {
-      console.log(e.message);
+      logger.error({ caller: "PrismaClientKnownRequestError", value: e.message });
     }
     await prisma.$disconnect();
-
     process.exit(1);
   } finally {
     await prisma.$disconnect();

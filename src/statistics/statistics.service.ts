@@ -11,7 +11,7 @@ export class StatisticsService {
     private readonly hashingService: HashingService,
   ) {}
   async addEmployee(createEmployeeDto: CreateEmployeeDto) {
-    const password = await this.hashingService.hash({ original: createEmployeeDto.password });
+    const password = await this.hashingService.hash({ raw: createEmployeeDto.password });
     const user = await this.prismaService.client.user.create({
       data: {
         ..._.omit(createEmployeeDto, ["password"]),
@@ -33,7 +33,6 @@ export class StatisticsService {
   async promoteToAdmin(employeeId: number) {
     const employee = await this.prismaService.client.user.findUnique({
       where: {
-        deletedAt: null,
         id: employeeId,
       },
       select: {
@@ -56,7 +55,6 @@ export class StatisticsService {
       }
       await tx.user.update({
         where: {
-          deletedAt: null,
           id: userId,
         },
         data: {
