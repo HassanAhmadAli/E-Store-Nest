@@ -17,6 +17,7 @@ import { DepartmentModule } from "./department/department.module";
 import KeyvRedis from "@keyv/redis";
 import morgan from "morgan";
 import { env } from "@/common/env";
+import { CommentModule } from "./comment/comment.module";
 @Module({
   imports: [
     CacheModule.registerAsync({
@@ -50,6 +51,7 @@ import { env } from "@/common/env";
     NotificationsModule,
     StatisticsModule,
     DepartmentModule,
+    CommentModule,
   ],
   controllers: [],
   providers: [
