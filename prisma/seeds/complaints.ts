@@ -2,7 +2,6 @@ import { PrismaClient } from "@/prisma";
 import { data as usersData } from "./user";
 import { data as departmentsData } from "./department";
 import { faker } from "@faker-js/faker";
-import _ from "lodash";
 const user = usersData.Citizen;
 export const data = Array.from({ length: 10 }, (_, id) => {
   const department = departmentsData[id % departmentsData.length]!;

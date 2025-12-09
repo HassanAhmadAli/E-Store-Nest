@@ -47,6 +47,7 @@ export class AuthenticationService {
     const encryptedPassword = await this.hashingService.hash({ raw: rawPassword });
     const verificationCode = (this.NODE_ENV === "production" ? randomInt(10000000, 99999999) : 12345678).toString();
     const verificationCodeExpiresAt = new Date(Date.now() + 15 * 60 * 1000);
+    console.log(signupDto);
     await this.prisma.user.create({
       data: {
         ...signupDto,

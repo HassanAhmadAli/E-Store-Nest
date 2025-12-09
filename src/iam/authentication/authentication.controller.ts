@@ -26,8 +26,7 @@ export class AuthenticationController {
   // Create Account
   @Post("signup")
   async signup(@Body() signUpDto: SignupDto) {
-    const user = await this.authenticationService.signup(signUpDto);
-    return user;
+    return await this.authenticationService.signup(signUpDto);
   }
 
   @HttpCode(HttpStatus.OK)
