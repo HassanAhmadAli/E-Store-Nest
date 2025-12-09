@@ -7,9 +7,10 @@
   "license": "UNLICENSED",
   "scripts": {
     "build": "nest build",
+    "reset:dev": "pnpm install && pnpm run db:reset",
+    "db:reset": "prisma migrate reset --force && prisma migrate dev --name e-store && prisma generate && prisma db seed",
     "format": "prettier --write \"{src,test,prisma}/**/*.ts\"",
     "start": "cross-env NODE_ENV=development nest start",
-    "restore": "pnpm install && pnpm run db:reset",
     "start:dev": "cross-env NODE_ENV=development nest start --watch",
     "start:debug": "cross-env NODE_ENV=development NEST_DEBUG=true nest start --debug --watch",
     "start:prod": "cross-env NODE_ENV=production node dist/src/main",
@@ -20,12 +21,10 @@
     "test:debug": "bun test --inspect-brk -timeout 0",
     "test:e2e": "bun test **/*e2e-spec.ts",
     "test:e2e:win": "powershell -c \"$x = ls **/*e2e-spec.ts ; bun test $x\"",
-    "db:seed": "prisma db seed",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev --name e-store",
-    "db:reset": "pnpm prisma migrate reset --force && prisma migrate dev --name e-store && pnpm prisma generate && pnpm run db:seed",
     "db:studio": "prisma studio",
-    "debug:circular-dependency": "npm run build && madge dist/src/main.js --circular"
+    "debug:circular-dependency": "pnpm run build && madge dist/src/main.js --circular"
   },
   "dependencies": {
     "@faker-js/faker": "^10.1.0",
