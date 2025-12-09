@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe } from 
 import { ComplaintsService } from "./complaints.service";
 import { CreateComplaintDto } from "./dto/create-complaint.dto";
 
-import { type ActiveUserType, ActiveUser } from "@/iam/decorators/ActiveUser.decorator";
+import { ActiveUser } from "@/iam/decorators/ActiveUser.decorator";
 import { UpdateComplaintDto } from "./dto/update-complaint.dto";
 import { SetAllowedRoles } from "@/iam/authorization/decorators/roles.decorator";
 import { Role } from "@/prisma";

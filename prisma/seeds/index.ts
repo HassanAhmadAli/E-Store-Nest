@@ -5,7 +5,7 @@ import { seedUsers } from "./user";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { seedDepartments } from "./department";
 import { seedComplaints } from "./complaints";
-import { logger } from "@/logger";
+import { logger } from "@/utils";
 
 const { DATABASE_URL } = envSchema
   .pick({

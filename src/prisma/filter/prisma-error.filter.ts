@@ -7,7 +7,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { PrismaClientKnownRequestError } from "@/prisma";
-import { logger } from "@/logger";
+import { logger } from "@/utils";
 
 @Catch(PrismaClientKnownRequestError)
 export class PrismaServerErrorFilter implements ExceptionFilter {

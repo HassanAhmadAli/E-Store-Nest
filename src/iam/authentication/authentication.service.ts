@@ -22,7 +22,7 @@ import { EnvVariables } from "@/common/schema/env";
 import { SignoutDto } from "./dto/signout.dto";
 import { MailerService } from "@nestjs-modules/mailer";
 import { VerifyEmailDto } from "./dto/verify-email.dto";
-import { logger } from "@/logger";
+import { logger } from "@/utils";
 
 @Injectable()
 export class AuthenticationService {

@@ -47,7 +47,7 @@ export class ComplaintsService {
       SELECT *
       FROM "Complaint"
       WHERE
-           "id" = ${complaintId} AND "deletedAt" IS NULL
+           "id" = ${complaintId} AND "Complaint"."deletedAt" IS NULL
       FOR UPDATE
       `);
       const complaint = complaints[0];
@@ -73,15 +73,12 @@ export class ComplaintsService {
       return updatedComplaint;
     });
   }
-  async archiveComplaint(complaintId: number, userId: number) {
+  async archiveComplaint(complaintId: number, employeeId: number) {
     return await this.prisma.$transaction(async (tx) => {
-      const complaints = await tx.$queryRaw<Pick<Prisma.ComplaintModel, "id" | "isArchived" | "assignedEmployeeId">[]>(
-        Prisma.sql` SELECT id, "isArchived", "assignedEmployeeId"
-      FROM "Complaint"
-      WHERE id = ${complaintId} AND deletedAt IS NULL
-      FOR UPDATE
-    `,
-      );
+      const complaints = await tx.$queryRaw<Complaint[]>(Prisma.sql`
+         SELECT * FROM "Complaint"
+          WHERE "id" = ${complaintId} AND "Complaint"."deletedAt" IS NULL
+          FOR UPDATE`);
       const complaint = complaints[0];
       if (complaint == undefined) {
         throw new ConflictException("Complaint Not Found");
@@ -89,10 +86,10 @@ export class ComplaintsService {
       if (complaint.isArchived === true) {
         throw new ConflictException("Complaint already archived");
       }
-      if (complaint.assignedEmployeeId !== userId) {
+      if (complaint.assignedEmployeeId !== employeeId) {
         throw new ConflictException("Employee does not have permissions to archive this Complaint");
       }
-      const updated = await tx.complaint.update({
+      return await tx.complaint.update({
         where: {
           id: complaintId,
         },
@@ -100,7 +97,6 @@ export class ComplaintsService {
           isArchived: true,
         },
       });
-      return updated;
     });
   }
 }

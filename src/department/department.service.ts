@@ -3,7 +3,7 @@ import { CreateDepartmentDto } from "./dto/create-department.dto";
 import { UpdateDepartmentDto } from "./dto/update-department.dto";
 import { PrismaService } from "@/prisma";
 import { PaginationQueryDto } from "@/common/dto/pagination-query.dto";
-import { logger } from "@/logger";
+import { logger } from "@/utils";
 
 @Injectable()
 export class DepartmentService {
