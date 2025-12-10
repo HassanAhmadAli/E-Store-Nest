@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Param, ParseIntPipe, Patch, Post } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post } from "@nestjs/common";
 import { UserService } from "./user.service";
 import { UpdateProfileDto } from "./dto/update-profile.dto";
 import { ActiveUser } from "@/iam/decorators/ActiveUser.decorator";
@@ -12,6 +12,11 @@ export class UserController {
   @Patch("profile")
   updateProfile(@Body() updateUserDto: UpdateProfileDto, @ActiveUser("sub") id: number) {
     return this.userService.updateAdminProfile(updateUserDto, id);
+  }
+
+  @Get("profile")
+  getProfile(@ActiveUser("sub") userId: number) {
+    return this.userService.getProfile(userId);
   }
 
   @SetAllowedRoles(Role.Admin)

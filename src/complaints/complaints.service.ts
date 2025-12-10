@@ -1,4 +1,4 @@
-import { ConflictException, Injectable } from "@nestjs/common";
+import { ConflictException, Injectable, UnauthorizedException } from "@nestjs/common";
 import { CreateComplaintDto } from "./dto/create-complaint.dto";
 import { Prisma, PrismaService, Complaint } from "@/prisma";
 import { UpdateComplaintDto } from "./dto/update-complaint.dto";
@@ -26,6 +26,60 @@ export class ComplaintsService {
     });
   }
 
+  async getDepartmentComplaints(departmentId: number) {
+    return await this.prisma.complaint.findMany({
+      where: {
+        departmentId,
+      },
+    });
+  }
+  async assignComplaint(complaintId: number, employeeId: number) {
+    const employee = await this.prisma.user.findUniqueOrThrow({
+      where: {
+        id: employeeId,
+      },
+      select: {
+        departmentId: true,
+      },
+    });
+    if (employee.departmentId == null) {
+      throw new UnauthorizedException("You Does Not belone to a department");
+    }
+    const complaint = await this.prisma.complaint.findUniqueOrThrow({
+      where: {
+        id: complaintId,
+      },
+      select: {
+        departmentId: true,
+      },
+    });
+    if (complaint.departmentId != employee.departmentId) {
+      console.log({ employee, complaint });
+      throw new UnauthorizedException("You does not belone to the same department of this complaint");
+    }
+    return await this.prisma.complaint.update({
+      where: {
+        id: complaintId,
+      },
+      data: {
+        assignedEmployeeId: employeeId,
+      },
+    });
+  }
+  async getEmployeeComplaints(employeeId: number) {
+    return await this.prisma.complaint.findMany({
+      where: {
+        assignedEmployeeId: employeeId,
+      },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        status: true,
+        assignedEmployeeId: true,
+      } satisfies Prisma.ComplaintSelect,
+    });
+  }
   async getCitizenComplaints(citizenId: number) {
     return await this.prisma.complaint.findMany({
       where: {

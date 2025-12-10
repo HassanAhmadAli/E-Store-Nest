@@ -31,7 +31,20 @@ export class UserService {
       } satisfies Prisma.UserSelect,
     });
   }
-
+  async getProfile(userId: number) {
+    return await this.prisma.user.findUniqueOrThrow({
+      where: {
+        id: userId,
+      },
+      select: {
+        fullName: true,
+        email: true,
+        nationalId: true,
+        role: true,
+        departmentId: true,
+      },
+    });
+  }
   async updateEmployeeProfile(updateUserDto: UpdateProfileDto, userId: number) {
     const user = await this.prisma.user.update({
       where: {

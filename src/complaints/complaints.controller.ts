@@ -18,19 +18,31 @@ export class ComplaintsController {
   }
 
   @SetAllowedRoles(Role.Citizen)
-  @Get("my-complaints")
+  @Get("citizen-complaints")
   async getCitizenComplaints(@ActiveUser("sub") citizenId: number) {
     return await this.complaintsService.getCitizenComplaints(citizenId);
   }
 
-  //todo: Receive/Process
-  @Get("assigned")
-  x() {
-    return { message: "Receive/Process" };
+  @SetAllowedRoles(Role.Employee)
+  @Get("employee/assigned-complaints")
+  async getEmployeeComplaints(@ActiveUser("sub") employeeId: number) {
+    return await this.complaintsService.getEmployeeComplaints(employeeId);
   }
 
   @SetAllowedRoles(Role.Employee)
-  @Patch(":id/status")
+  @Get("employee/department-complaints")
+  async getDepartmentComplaints(@ActiveUser("sub") employeeId: number) {
+    return await this.complaintsService.getDepartmentComplaints(employeeId);
+  }
+
+  @SetAllowedRoles(Role.Employee)
+  @Patch("employee/:id/assign")
+  async assignComplaint(@Param("id", ParseIntPipe) complaintId: number, @ActiveUser("sub") employeeId: number) {
+    return await this.complaintsService.assignComplaint(complaintId, employeeId);
+  }
+
+  @SetAllowedRoles(Role.Employee)
+  @Patch("employee/:id/status")
   async updateStatus(
     @Param("id", ParseIntPipe) complaintId: number,
     @Body() updateComplaintDto: UpdateComplaintDto,
@@ -40,7 +52,7 @@ export class ComplaintsController {
   }
 
   @SetAllowedRoles(Role.Employee)
-  @Delete(":id/status")
+  @Delete("employee/:id/archive")
   async archiveComplaint(@Param("id", ParseIntPipe) complaintId: number, @ActiveUser("sub") employeeId: number) {
     return await this.complaintsService.archiveComplaint(complaintId, employeeId);
   }
