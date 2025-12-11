@@ -18,6 +18,7 @@ import KeyvRedis from "@keyv/redis";
 import morgan from "morgan";
 import { env } from "@/common/env";
 import { CommentModule } from "./comment/comment.module";
+import { AttachmentModule } from "./attachment/attachment.module";
 @Module({
   imports: [
     CacheModule.registerAsync({
@@ -52,6 +53,7 @@ import { CommentModule } from "./comment/comment.module";
     StatisticsModule,
     DepartmentModule,
     CommentModule,
+    AttachmentModule,
   ],
   controllers: [],
   providers: [

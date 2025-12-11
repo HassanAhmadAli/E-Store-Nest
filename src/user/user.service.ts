@@ -27,7 +27,9 @@ export class UserService {
       data: updateUserDto,
       select: {
         ...getKeysOfTrue(updateUserDto),
+        phoneNumber: true,
         email: true,
+        password: false,
       } satisfies Prisma.UserSelect,
     });
   }
@@ -39,6 +41,7 @@ export class UserService {
       select: {
         fullName: true,
         email: true,
+        phoneNumber: true,
         nationalId: true,
         role: true,
         departmentId: true,
@@ -57,6 +60,7 @@ export class UserService {
       select: {
         ...getKeysOfTrue(updateUserDto),
         email: true,
+        phoneNumber: true,
       } satisfies Prisma.UserSelect,
     });
     return user;
@@ -71,10 +75,10 @@ export class UserService {
       },
       select: {
         email: true,
+        phoneNumber: true,
         role: true,
         fullName: true,
         createdAt: true,
-        phoneNumber: true,
       },
     });
   }
@@ -87,6 +91,7 @@ export class UserService {
       },
       select: {
         email: true,
+        phoneNumber: true,
         role: true,
       },
     });
