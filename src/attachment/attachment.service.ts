@@ -1,26 +1,29 @@
-import { Injectable } from "@nestjs/common";
-import { CreateAttachmentDto } from "./dto/create-attachment.dto";
-import { UpdateAttachmentDto } from "./dto/update-attachment.dto";
-
+import { PrismaService } from "@/prisma";
+import { Injectable, StreamableFile } from "@nestjs/common";
+import { createReadStream } from "node:fs";
 @Injectable()
 export class AttachmentService {
-  create(createAttachmentDto: CreateAttachmentDto) {
-    return "This action adds a new attachment";
+  constructor(private readonly prismaService: PrismaService) {}
+  public get prisma() {
+    return this.prismaService.client;
   }
-
-  findAll() {
-    return `This action returns all attachment`;
+  async uploadFile(file: Express.Multer.File) {
+    return await this.prisma.storedFile.create({
+      data: {
+        id: file.filename,
+        originalname: file.originalname,
+        mimetype: file.mimetype,
+        path: file.path,
+        size: file.size,
+      },
+    });
   }
-
-  findOne(id: number) {
-    return `This action returns a #${id} attachment`;
-  }
-
-  update(id: number, updateAttachmentDto: UpdateAttachmentDto) {
-    return `This action updates a #${id} attachment`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} attachment`;
+  async downloadFile(id: string) {
+    const fileRecord = await this.prisma.storedFile.findUniqueOrThrow({ where: { id } });
+    const file = createReadStream(fileRecord.path);
+    return new StreamableFile(file, {
+      type: fileRecord.mimetype,
+      disposition: `attachment; filename="${fileRecord.originalname}"`,
+    });
   }
 }

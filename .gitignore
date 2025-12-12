@@ -68,3 +68,5 @@ prisma/migrations/*
 .vercel/
 *.env
 !.example.env
+
+uploads/

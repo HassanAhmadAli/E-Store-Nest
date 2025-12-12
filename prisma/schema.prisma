@@ -165,6 +165,18 @@ model Attachment {
   @@index([complaintId])
 }
 
+model StoredFile {
+  id           String @unique
+  originalname String
+  mimetype     String
+  path         String @unique
+  size         Int
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+}
+
 model User {
   id          Int     @id @default(autoincrement())
   // core fields

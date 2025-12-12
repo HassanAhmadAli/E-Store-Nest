@@ -1,42 +1,30 @@
-import { UploadedFile, UseInterceptors, Controller, Get, Post, Body, Patch, Param, Delete, Req } from "@nestjs/common";
+import { UploadedFile, UseInterceptors, Controller, Get, Post, Param } from "@nestjs/common";
 import { AttachmentService } from "./attachment.service";
-import { CreateAttachmentDto } from "./dto/create-attachment.dto";
-import { UpdateAttachmentDto } from "./dto/update-attachment.dto";
 import { FileInterceptor } from "@nestjs/platform-express";
-import z from "zod";
+import { PrismaService } from "@/prisma";
+import { Public } from "@/common/decorators/public.decorator";
+import { FileMimeStandarizingPipe } from "./pipe/file-mime-standarnizing.pipe";
 
 @Controller("attachment")
 export class AttachmentController {
-  constructor(private readonly attachmentService: AttachmentService) {}
-  @Post("file")
+  constructor(
+    private readonly attachmentService: AttachmentService,
+    private readonly prismaService: PrismaService,
+  ) {}
+  public get prisma() {
+    return this.prismaService.client;
+  }
+
+  @Public()
+  @Post("upload")
   @UseInterceptors(FileInterceptor("file"))
-  uploadFile(@UploadedFile() file: Express.Multer.File, @Req() req: Request) {
-    const x = z.file().parse(file);
-    return file;
+  async uploadFile(@UploadedFile(new FileMimeStandarizingPipe()) file: Express.Multer.File) {
+    return await this.attachmentService.uploadFile(file);
   }
 
-  @Post()
-  create(@Body() createAttachmentDto: CreateAttachmentDto) {
-    return this.attachmentService.create(createAttachmentDto);
-  }
-
-  @Get()
-  findAll() {
-    return this.attachmentService.findAll();
-  }
-
-  @Get(":id")
-  findOne(@Param("id") id: string) {
-    return this.attachmentService.findOne(+id);
-  }
-
-  @Patch(":id")
-  update(@Param("id") id: string, @Body() updateAttachmentDto: UpdateAttachmentDto) {
-    return this.attachmentService.update(+id, updateAttachmentDto);
-  }
-
-  @Delete(":id")
-  remove(@Param("id") id: string) {
-    return this.attachmentService.remove(+id);
+  @Public()
+  @Get("download/:id")
+  async downloadFile(@Param("id") id: string) {
+    return await this.attachmentService.downloadFile(id);
   }
 }
