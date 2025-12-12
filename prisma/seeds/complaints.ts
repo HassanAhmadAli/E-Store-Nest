@@ -2,19 +2,30 @@ import { PrismaClient } from "@/prisma";
 import { data as usersData } from "./user";
 import { data as departmentsData } from "./department";
 import { faker } from "@faker-js/faker";
-const user = usersData.Citizen;
-export const data = Array.from({ length: 10 }, (_, id) => {
-  const department = departmentsData[id % departmentsData.length]!;
+
+export const citizenComplaintsData = Array.from({ length: 10 }, (_, index) => {
+  const department = departmentsData[index % departmentsData.length]!;
   return {
-    id,
+    id: `000000000000000000000000${index.toString()}`,
     title: faker.lorem.words(4),
     description: faker.lorem.words(26),
-    citizenId: user.id,
+    citizenId: usersData.Citizen.id,
+    departmentId: department.id,
+  };
+});
+
+export const debuggingUserComplaintsData = Array.from({ length: 10 }, (_, index) => {
+  const department = departmentsData[index % departmentsData.length]!;
+  return {
+    id: `000000000000000000000001${index.toString()}`,
+    title: faker.lorem.words(4),
+    description: faker.lorem.words(26),
+    citizenId: usersData.Debugging.id,
     departmentId: department.id,
   };
 });
 export async function seedComplaints(prisma: PrismaClient) {
   await prisma.complaint.createMany({
-    data: data,
+    data: [...citizenComplaintsData, ...debuggingUserComplaintsData],
   });
 }

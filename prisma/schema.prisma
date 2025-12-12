@@ -61,7 +61,7 @@ model Department {
 }
 
 model Complaint {
-  id                Int               @id @default(autoincrement())
+  id                String            @id @default(cuid())
   // core fields
   referenceCode     String            @unique @default(uuid()) // Unique public reference
   title             String
@@ -103,7 +103,7 @@ model Comment {
   // core fields
   content     String
   // forigne keys
-  complaintId Int
+  complaintId String
   userId      Int
 
   // relations
@@ -128,7 +128,7 @@ model ComplaintLog {
   notes   String?
 
   // forign keys 
-  complaintId Int
+  complaintId String
   changedById Int
   // relations
   complaint   Complaint @relation(fields: [complaintId], references: [id])
@@ -144,23 +144,20 @@ model ComplaintLog {
 }
 
 model Attachment {
-  id Int @id @default(autoincrement())
-
-  // core fields
-  fileUrl  String
-  fileType String
-  fileSize Int?
-
+  id           Int    @id @default(autoincrement())
+  storedFileId String
   // forign keys
-  complaintId Int
+  creatorId    Int
+  complaintId  String
 
   // relations
-  complaint Complaint @relation(fields: [complaintId], references: [id])
-
+  complaint  Complaint  @relation(fields: [complaintId], references: [id])
+  storedFile StoredFile @relation(fields: [storedFileId], references: [id])
+  creator    User       @relation(fields: [creatorId], references: [id])
   //
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  deletedAt  DateTime?
 
   @@index([complaintId])
 }
@@ -172,9 +169,10 @@ model StoredFile {
   path         String @unique
   size         Int
 
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  deletedAt   DateTime?
+  attachments Attachment[]
 }
 
 model User {
@@ -205,9 +203,10 @@ model User {
   comments           Comment[]
 
   //
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  deletedAt   DateTime?
+  attachments Attachment[]
 
   //
   @@index([departmentId])
@@ -222,7 +221,7 @@ model Notification {
 
   // forign keys
   userId      Int
-  complaintId Int?
+  complaintId String?
 
   // relations
   user      User       @relation(fields: [userId], references: [id])

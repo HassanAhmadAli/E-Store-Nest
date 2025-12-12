@@ -22,7 +22,6 @@ export class AttachmentController {
     return await this.attachmentService.uploadFile(file);
   }
 
-  @Public()
   @Get("download/:id")
   async downloadFile(@Param("id") id: string) {
     return await this.attachmentService.downloadFile(id);

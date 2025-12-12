@@ -3,6 +3,7 @@ import { CreateComplaintDto } from "./dto/create-complaint.dto";
 import { Prisma, PrismaService, Complaint } from "@/prisma";
 import { UpdateComplaintDto } from "./dto/update-complaint.dto";
 import { getKeysOfTrue } from "@/utils";
+import { PaginationQueryDto } from "@/common/dto/pagination-query.dto";
 @Injectable()
 export class ComplaintsService {
   constructor(private readonly prismaService: PrismaService) {}
@@ -25,6 +26,53 @@ export class ComplaintsService {
       },
     });
   }
+  async citizenAttachFileToComplaint(citizenId: number, complaintId: string, file: Express.Multer.File) {
+    const storedFile = await this.prisma.storedFile.create({
+      data: {
+        id: file.filename,
+        originalname: file.originalname,
+        mimetype: file.mimetype,
+        path: file.path,
+        size: file.size,
+      },
+    });
+    const attachment = await this.prisma.attachment.create({
+      data: {
+        storedFileId: storedFile.id,
+        complaintId,
+        creatorId: citizenId,
+      },
+      select: {
+        createdAt: true,
+        storedFileId: true,
+      },
+    });
+    return attachment;
+  }
+  async getComplaintsAttachments(complaintId: string, { limit, offset, deleted, deletedAt }: PaginationQueryDto) {
+    return await this.prisma.attachment.findMany({
+      where: {
+        complaintId,
+        deletedAt,
+      },
+      skip: offset,
+      take: limit,
+      select: {
+        storedFile: {
+          select: {
+            id: true,
+            originalname: true,
+            size: true,
+            mimetype: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
+        updatedAt: deleted,
+        deletedAt: deleted,
+      },
+    });
+  }
 
   async getDepartmentComplaints(departmentId: number) {
     return await this.prisma.complaint.findMany({
@@ -33,7 +81,7 @@ export class ComplaintsService {
       },
     });
   }
-  async assignComplaint(complaintId: number, employeeId: number) {
+  async assignComplaint(complaintId: string, employeeId: number) {
     const employee = await this.prisma.user.findUniqueOrThrow({
       where: {
         id: employeeId,
@@ -95,7 +143,7 @@ export class ComplaintsService {
     });
   }
 
-  async updateStatus(complaintId: number, employeeId: number, updateComplaintDto: UpdateComplaintDto) {
+  async updateStatus(complaintId: string, employeeId: number, updateComplaintDto: UpdateComplaintDto) {
     return await this.prisma.$transaction(async (tx) => {
       const complaints = await tx.$queryRaw<Complaint[]>(Prisma.sql`
       SELECT *
@@ -127,7 +175,7 @@ export class ComplaintsService {
       return updatedComplaint;
     });
   }
-  async archiveComplaint(complaintId: number, employeeId: number) {
+  async archiveComplaint(complaintId: string, employeeId: number) {
     return await this.prisma.$transaction(async (tx) => {
       const complaints = await tx.$queryRaw<Complaint[]>(Prisma.sql`
          SELECT * FROM "Complaint"
