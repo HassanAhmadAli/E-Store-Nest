@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
-import { NotificationsGateway } from "./notifications-gateway";
-
+import { Server, Socket } from "socket.io";
+import { MessageBody } from "@nestjs/websockets";
+import { logger } from "@/utils";
 export interface Notification {
   id: string;
   userId: string;
@@ -10,10 +11,35 @@ export interface Notification {
   read: boolean;
   createdAt: Date;
 }
-
 @Injectable()
 export class NotificationsService {
-  constructor(private notificationsGateway: NotificationsGateway) {}
+  server!: Server;
+  setServer(server: Server) {
+    this.server = server;
+  }
+  private userSockets = new Map<string, string>();
+
+  async handleRegister(client: Socket, @MessageBody() userId: string) {
+    await client.join(`user:${userId}`);
+    this.userSockets.set(userId, client.id);
+    logger.info(`User ${userId} registered with socket ID: ${client.id}`);
+    const message = { success: true, message: "Registered successfully" };
+    logger.debug({ isInstanceOf: this.server });
+    // this.server.emit("notification", message);
+    return message;
+  }
+
+  async handleDisconnect(client: Socket) {
+    logger.info(`Client disconnected: ${client.id}`);
+    // Remove user from map
+    for (const [userId, socketId] of this.userSockets.entries()) {
+      if (socketId === client.id) {
+        this.userSockets.delete(userId);
+        await client.leave(`user:${userId}`);
+        break;
+      }
+    }
+  }
 
   createNotification(userId: string, title: string, message: string, type: Notification["type"] = "info") {
     const notification: Notification = {
@@ -26,7 +52,7 @@ export class NotificationsService {
       createdAt: new Date(),
     };
     // Send real-time notification
-    this.notificationsGateway.sendNotificationToUser(userId, notification);
+    this.server.to(`user:${userId}`).emit("notification", notification);
     return notification;
   }
 
@@ -41,10 +67,12 @@ export class NotificationsService {
       createdAt: new Date(),
     }));
     // Send real-time notifications
-    this.notificationsGateway.sendNotificationToUsers(userIds, {
-      title,
-      message,
-      type,
+    userIds.forEach((userId) => {
+      this.server.to(`user:${userId}`).emit("notification", {
+        title,
+        message,
+        type,
+      });
     });
     return notifications;
   }
@@ -57,7 +85,8 @@ export class NotificationsService {
       type,
       createdAt: new Date(),
     };
-    this.notificationsGateway.broadcastNotification(notification);
+    this.server.emit("notification", notification);
+
     return notification;
   }
 }
