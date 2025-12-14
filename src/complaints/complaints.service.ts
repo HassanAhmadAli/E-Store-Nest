@@ -74,44 +74,46 @@ export class ComplaintsService {
     });
   }
 
-  async getDepartmentComplaints(departmentId: number) {
+  async getDepartmentComplaints(employeeId: number) {
+    const emp = await this.prisma.user.findUniqueOrThrow({
+      where: { id: employeeId },
+    });
     return await this.prisma.complaint.findMany({
       where: {
-        departmentId,
+        departmentId: emp.departmentId!,
       },
     });
   }
   async assignComplaint(complaintId: string, employeeId: number) {
-    const employee = await this.prisma.user.findUniqueOrThrow({
-      where: {
-        id: employeeId,
-      },
-      select: {
-        departmentId: true,
-      },
-    });
-    if (employee.departmentId == null) {
-      throw new UnauthorizedException("You Does Not belone to a department");
-    }
-    const complaint = await this.prisma.complaint.findUniqueOrThrow({
-      where: {
-        id: complaintId,
-      },
-      select: {
-        departmentId: true,
-      },
-    });
-    if (complaint.departmentId != employee.departmentId) {
-      console.log({ employee, complaint });
-      throw new UnauthorizedException("You does not belone to the same department of this complaint");
-    }
-    return await this.prisma.complaint.update({
-      where: {
-        id: complaintId,
-      },
-      data: {
-        assignedEmployeeId: employeeId,
-      },
+    return this.prisma.$transaction(async (tx) => {
+      const employee = await tx.user.findUniqueOrThrow({
+        where: {
+          id: employeeId,
+          departmentId: { not: null },
+        },
+        select: {
+          departmentId: true,
+        },
+      });
+      const complaints = await tx.$queryRaw<Complaint[]>(
+        Prisma.sql`SELECT * FROM "Complaint" WHERE "id" = ${complaintId} AND "Complaint"."deletedAt" IS NULL FOR UPDATE`,
+      );
+      if (complaints == undefined || complaints.length === 0) {
+        console.log({ complaints });
+        throw new ConflictException("Complaint not found");
+      }
+      const complaint = complaints[0]!;
+      if (complaint.departmentId != employee.departmentId) {
+        throw new UnauthorizedException("You does not belone to the same department of this complaint");
+      }
+      return await tx.complaint.update({
+        where: {
+          id: complaintId,
+        },
+        data: {
+          assignedEmployeeId: employeeId,
+        },
+      });
     });
   }
   async getEmployeeComplaints(employeeId: number) {
@@ -119,13 +121,6 @@ export class ComplaintsService {
       where: {
         assignedEmployeeId: employeeId,
       },
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        status: true,
-        assignedEmployeeId: true,
-      } satisfies Prisma.ComplaintSelect,
     });
   }
   async getCitizenComplaints(citizenId: number) {
@@ -145,13 +140,9 @@ export class ComplaintsService {
 
   async updateStatus(complaintId: string, employeeId: number, updateComplaintDto: UpdateComplaintDto) {
     return await this.prisma.$transaction(async (tx) => {
-      const complaints = await tx.$queryRaw<Complaint[]>(Prisma.sql`
-      SELECT *
-      FROM "Complaint"
-      WHERE
-           "id" = ${complaintId} AND "Complaint"."deletedAt" IS NULL
-      FOR UPDATE
-      `);
+      const complaints = await tx.$queryRaw<Complaint[]>(
+        Prisma.sql`SELECT * FROM "Complaint" WHERE "id" = ${complaintId} AND "Complaint"."deletedAt" IS NULL FOR UPDATE`,
+      );
       const complaint = complaints[0];
       if (complaint == undefined) {
         throw new ConflictException("Complaint does not exist");
@@ -164,6 +155,7 @@ export class ComplaintsService {
       const updatedComplaint = await tx.complaint.update({
         where: {
           id: complaintId,
+
           assignedEmployeeId: employeeId,
         },
         data: updateComplaintDto,
@@ -177,10 +169,9 @@ export class ComplaintsService {
   }
   async archiveComplaint(complaintId: string, employeeId: number) {
     return await this.prisma.$transaction(async (tx) => {
-      const complaints = await tx.$queryRaw<Complaint[]>(Prisma.sql`
-         SELECT * FROM "Complaint"
-          WHERE "id" = ${complaintId} AND "Complaint"."deletedAt" IS NULL
-          FOR UPDATE`);
+      const complaints = await tx.$queryRaw<Complaint[]>(
+        Prisma.sql`SELECT * FROM "Complaint" WHERE "id" = ${complaintId} AND "Complaint"."deletedAt" IS NULL FOR UPDATE`,
+      );
       const complaint = complaints[0];
       if (complaint == undefined) {
         throw new ConflictException("Complaint Not Found");

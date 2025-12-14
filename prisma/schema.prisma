@@ -5,8 +5,6 @@ generator client {
   engineType   = "client"
 }
 
-// // // // turn off
-
 // generator zod {
 //   provider = "prisma-zod-generator"
 //   output   = "../generated/prisma/zod"
@@ -45,12 +43,13 @@ enum AuditAction {
 }
 
 model Department {
-  id          Int     @id @default(autoincrement())
-  // core fields
+  id Int @id @default(autoincrement())
+
+  //
   name        String  @unique
   description String?
 
-  // relations
+  //
   employees  User[]
   complaints Complaint[]
 
@@ -61,32 +60,34 @@ model Department {
 }
 
 model Complaint {
-  id                String            @id @default(cuid())
-  // core fields
-  referenceCode     String            @unique @default(uuid()) // Unique public reference
+  id String @id @default(cuid())
+
+  //
   title             String
   description       String
   status            ComplaintStatus   @default(Pending)
   complaintPriority ComplaintPriority @default(Medium)
   isArchived        Boolean           @default(false)
-  location          String? // Or use Float for lat/lng if using maps
+  location          String?
   lockedAt          DateTime?
 
-  // forign keys
+  //
   departmentId       Int
   citizenId          Int
   assignedEmployeeId Int?
   lockedById         Int?
-  // relations
-  department         Department     @relation(fields: [departmentId], references: [id])
-  citizen            User           @relation("CitizenComplaints", fields: [citizenId], references: [id], onDelete: Restrict)
-  assignedEmployee   User?          @relation("EmployeeComplaints", fields: [assignedEmployeeId], references: [id], onDelete: SetNull)
-  lockedBy           User?          @relation("UserLockedComplaints", fields: [lockedById], references: [id])
-  logs               ComplaintLog[]
-  notifications      Notification[]
-  attachments        Attachment[]
-  comments           Comment[]
 
+  //
+  department       Department     @relation(fields: [departmentId], references: [id])
+  citizen          User           @relation("CitizenComplaints", fields: [citizenId], references: [id], onDelete: Restrict)
+  assignedEmployee User?          @relation("EmployeeComplaints", fields: [assignedEmployeeId], references: [id], onDelete: SetNull)
+  lockedBy         User?          @relation("UserLockedComplaints", fields: [lockedById], references: [id])
+  logs             ComplaintLog[]
+  notifications    Notification[]
+  attachments      Attachment[]
+  comments         Comment[]
+
+  //
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
@@ -95,18 +96,19 @@ model Complaint {
   @@index([assignedEmployeeId])
   @@index([departmentId])
   @@index([status])
-  @@index([referenceCode])
 }
 
 model Comment {
-  id          Int    @id @default(autoincrement())
-  // core fields
-  content     String
-  // forigne keys
+  id Int @id @default(autoincrement())
+
+  //
+  content String
+
+  //
   complaintId String
   userId      Int
 
-  // relations
+  //
   complaint Complaint @relation(fields: [complaintId], references: [id])
   user      User      @relation(fields: [userId], references: [id])
 
@@ -122,17 +124,18 @@ model Comment {
 
 model ComplaintLog {
   id      Int         @id @default(autoincrement())
-  // core fields
+  //
   action  AuditAction
   changes Json
   notes   String?
 
-  // forign keys 
+  //
   complaintId String
   changedById Int
-  // relations
-  complaint   Complaint @relation(fields: [complaintId], references: [id])
-  changedBy   User      @relation(fields: [changedById], references: [id])
+
+  //
+  complaint Complaint @relation(fields: [complaintId], references: [id])
+  changedBy User      @relation(fields: [changedById], references: [id])
 
   //
   createdAt DateTime  @default(now())
@@ -146,38 +149,41 @@ model ComplaintLog {
 model Attachment {
   id           Int    @id @default(autoincrement())
   storedFileId String
-  // forign keys
+  //
   creatorId    Int
   complaintId  String
 
-  // relations
+  //
   complaint  Complaint  @relation(fields: [complaintId], references: [id])
   storedFile StoredFile @relation(fields: [storedFileId], references: [id])
   creator    User       @relation(fields: [creatorId], references: [id])
+
   //
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
-  deletedAt  DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   @@index([complaintId])
 }
 
 model StoredFile {
-  id           String @unique
+  id           String @id @unique
   originalname String
   mimetype     String
   path         String @unique
   size         Int
 
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  deletedAt   DateTime?
+  //
   attachments Attachment[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 }
 
 model User {
   id          Int     @id @default(autoincrement())
-  // core fields
+  //
   fullName    String
   email       String  @unique
   phoneNumber String  @unique
@@ -190,10 +196,10 @@ model User {
   verificationCode          String?
   verificationCodeExpiresAt DateTime?
 
-  // forign keys
+  //
   departmentId Int?
 
-  // relations
+  //
   department         Department?    @relation(fields: [departmentId], references: [id])
   complaintsFiled    Complaint[]    @relation("CitizenComplaints")
   complaintsAssigned Complaint[]    @relation("EmployeeComplaints")
@@ -201,12 +207,12 @@ model User {
   logsCreated        ComplaintLog[] // Tracks who updated a complaint status
   notifications      Notification[]
   comments           Comment[]
+  attachments        Attachment[]
 
   //
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  deletedAt   DateTime?
-  attachments Attachment[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   //
   @@index([departmentId])
@@ -215,15 +221,15 @@ model User {
 
 model Notification {
   id      Int     @id @default(autoincrement())
-  // core fields
+  //
   message String
   isRead  Boolean @default(false)
 
-  // forign keys
+  //
   userId      Int
   complaintId String?
 
-  // relations
+  //
   user      User       @relation(fields: [userId], references: [id])
   complaint Complaint? @relation(fields: [complaintId], references: [id])
 

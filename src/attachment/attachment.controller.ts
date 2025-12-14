@@ -18,7 +18,10 @@ export class AttachmentController {
   @Public()
   @Post("upload")
   @UseInterceptors(FileInterceptor("file"))
-  async uploadFile(@UploadedFile(new FileMimeStandarizingPipe()) file: Express.Multer.File) {
+  async uploadFile(
+    @UploadedFile(new FileMimeStandarizingPipe())
+    file: Express.Multer.File,
+  ) {
     return await this.attachmentService.uploadFile(file);
   }
 

@@ -23,7 +23,7 @@ import { SignoutDto } from "./dto/signout.dto";
 import { MailerService } from "@nestjs-modules/mailer";
 import { VerifyEmailDto } from "./dto/verify-email.dto";
 import { logger } from "@/utils";
-
+import { Cache } from "@nestjs/cache-manager";
 @Injectable()
 export class AuthenticationService {
   constructor(
@@ -35,8 +35,11 @@ export class AuthenticationService {
     private readonly refreshTokenIdsStorage: RefreshTokenIdsStorage,
     private readonly config: ConfigService<EnvVariables>,
     private readonly mailerService: MailerService,
+    private cacheManager: Cache,
   ) {
-    this.NODE_ENV = this.config.getOrThrow("NODE_ENV", { infer: true });
+    this.NODE_ENV = this.config.getOrThrow("NODE_ENV", {
+      infer: true,
+    });
   }
   private NODE_ENV: EnvVariables["NODE_ENV"];
   public get prisma() {
@@ -44,7 +47,9 @@ export class AuthenticationService {
   }
 
   async signup({ password: rawPassword, ...signupDto }: SignupDto) {
-    const encryptedPassword = await this.hashingService.hash({ raw: rawPassword });
+    const encryptedPassword = await this.hashingService.hash({
+      raw: rawPassword,
+    });
     const verificationCode = (this.NODE_ENV === "production" ? randomInt(10000000, 99999999) : 12345678).toString();
     const verificationCodeExpiresAt = new Date(Date.now() + 15 * 60 * 1000);
     console.log(signupDto);
@@ -75,16 +80,16 @@ export class AuthenticationService {
           <p>This code expires in 15 minutes.</p>
         `,
     });
-    return { message: "User created. Please check your email for verification code." };
+    return {
+      message: "User created. Please check your email for verification code.",
+    };
   }
 
   async verifyEmail({ email, code }: VerifyEmailDto) {
     return await this.prisma.$transaction(async (tx) => {
-      const queryResult = await tx.$queryRaw<User[] | undefined>(Prisma.sql`
-        SELECT * FROM "User"
-          WHERE "email" = ${email}
-          FOR UPDATE
-      `);
+      const queryResult = await tx.$queryRaw<User[] | undefined>(
+        Prisma.sql`SELECT * FROM "User" WHERE "email" = ${email} FOR UPDATE`,
+      );
       if (queryResult == undefined || queryResult.length === 0) {
         throw new UnauthorizedException();
       }
@@ -112,8 +117,30 @@ export class AuthenticationService {
         },
       });
 
-      return { message: "Account Verified Successfully, please login" };
+      return {
+        message: "Account Verified Successfully, please login",
+      };
     });
+  }
+
+  getKey(email: string) {
+    return `password-mismatch-${email}`;
+  }
+  async handlePasswordNotMatch({ email }: { email: string }) {
+    const key = this.getKey(email);
+    const res: number | undefined = await this.cacheManager.get(key);
+    if (res == undefined) {
+      return await this.cacheManager.set(key, 1);
+    }
+    if (res < 3) return await this.cacheManager.set(key, res + 1);
+    await this.mailerService.sendMail({
+      to: email,
+      subject: "Welcome! Verify your Email",
+      html: `
+          You have signedin with the wrong password 3 times
+        `,
+    });
+    return;
   }
 
   async signIn({ email, password: rawPassword }: SigninDto) {
@@ -139,9 +166,14 @@ export class AuthenticationService {
     });
 
     if (!doesPasswordMatch) {
+      await this.handlePasswordNotMatch({ email });
       throw new UnauthorizedException(ErrorMessages.PASSWORD_INCORRECT);
     }
-    const signedData = { email, sub: user.id, role: user.role };
+    const signedData = {
+      email,
+      sub: user.id,
+      role: user.role,
+    };
     const { refreshTokenId, ...generatedTokens } = await this.generateTokens(signedData);
     await this.refreshTokenIdsStorage.insert(user.id, refreshTokenId);
     return generatedTokens;
@@ -184,7 +216,11 @@ export class AuthenticationService {
         email: true,
       },
     });
-    const newRefreshTokenPayload = { sub: userId, email: user.email, role: user.role };
+    const newRefreshTokenPayload = {
+      sub: userId,
+      email: user.email,
+      role: user.role,
+    };
     const { refreshTokenId: oldRefreshTokenId, ...generateTokens } = await this.generateTokens(newRefreshTokenPayload);
     await this.refreshTokenIdsStorage.insert(userId, oldRefreshTokenId);
     return generateTokens;
@@ -201,10 +237,19 @@ export class AuthenticationService {
     });
     const [accessToken, refreshToken] = await Promise.all([
       this.signMethod(accessTokenPayload, this.config.getOrThrow("JWT_TTL", { infer: true })),
-      this.signMethod(refreshTokenPayload, this.config.getOrThrow("JWT_REFRESH_TTL", { infer: true })),
+      this.signMethod(
+        refreshTokenPayload,
+        this.config.getOrThrow("JWT_REFRESH_TTL", {
+          infer: true,
+        }),
+      ),
     ]);
 
-    return { accessToken, refreshToken, refreshTokenId: refreshTokenPayload.refreshTokenId };
+    return {
+      accessToken,
+      refreshToken,
+      refreshTokenId: refreshTokenPayload.refreshTokenId,
+    };
   }
   private async signMethod(signedData: ActiveUserType | RefreshTokenPayload, expiresIn: DurationType) {
     return await this.jwtService.signAsync(signedData, {

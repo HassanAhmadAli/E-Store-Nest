@@ -8,56 +8,80 @@ export const createPrismaClient = ({ DATABASE_URL }: { DATABASE_URL: string }) =
     connectionString: DATABASE_URL,
     max: 20,
   });
-  const prisma = new PrismaClient({ adapter, log: [] }).$extends({
+  const prisma = new PrismaClient({
+    adapter,
+    log: ["query"],
+  }).$extends({
     query: {
       $allModels: {
         async aggregate({ args, query }) {
           if (args.where != undefined && "deletedAt" in args.where) {
             return query(args);
           }
-          args.where = { deletedAt: null, ...args.where };
+          args.where = {
+            deletedAt: null,
+            ...args.where,
+          };
           return query(args);
         },
         async count({ args, query }) {
           if (args.where != undefined && "deletedAt" in args.where) {
             return query(args);
           }
-          args.where = { deletedAt: null, ...args.where };
+          args.where = {
+            deletedAt: null,
+            ...args.where,
+          };
           return query(args);
         },
         async findFirst({ args, query }) {
           if (args.where != undefined && "deletedAt" in args.where) {
             return query(args);
           }
-          args.where = { deletedAt: null, ...args.where };
+          args.where = {
+            deletedAt: null,
+            ...args.where,
+          };
           return query(args);
         },
         async findFirstOrThrow({ args, query }) {
           if (args.where != undefined && "deletedAt" in args.where) {
             return query(args);
           }
-          args.where = { deletedAt: null, ...args.where };
+          args.where = {
+            deletedAt: null,
+            ...args.where,
+          };
           return query(args);
         },
         async findMany({ args, query }) {
           if (args.where != undefined && "deletedAt" in args.where) {
             return query(args);
           }
-          args.where = { deletedAt: null, ...args.where };
+          args.where = {
+            deletedAt: null,
+            ...args.where,
+          };
           return query(args);
         },
         async findUnique({ args, query }) {
           if (args.where != undefined && "deletedAt" in args.where) {
             return query(args);
           }
-          args.where = { deletedAt: null, ...args.where };
+          args.where = {
+            deletedAt: null,
+            ...args.where,
+          };
           return query(args);
         },
         async findUniqueOrThrow({ args, query }) {
           if (args.where != undefined && "deletedAt" in args.where) {
             return query(args);
           }
-          args.where = { deletedAt: null, ...args.where };
+          args.where = {
+            deletedAt: null,
+            ...args.where,
+          };
           return query(args);
         },
         async groupBy({ args, query }) {
@@ -65,9 +89,14 @@ export const createPrismaClient = ({ DATABASE_URL }: { DATABASE_URL: string }) =
             if (args.where != undefined && "deletedAt" in args.where) {
               return query(args);
             }
-            args.where = { deletedAt: null, ...args.where };
+            args.where = {
+              deletedAt: null,
+              ...args.where,
+            };
           } else {
-            args.where = { deletedAt: null };
+            args.where = {
+              deletedAt: null,
+            };
           }
           return query(args);
         },
@@ -75,7 +104,10 @@ export const createPrismaClient = ({ DATABASE_URL }: { DATABASE_URL: string }) =
           if (args.where != undefined && "deletedAt" in args.where) {
             return query(args);
           }
-          args.where = { deletedAt: null, ...args.where };
+          args.where = {
+            deletedAt: null,
+            ...args.where,
+          };
           return query(args);
         },
         async updateMany({ args, query }) {
@@ -83,9 +115,14 @@ export const createPrismaClient = ({ DATABASE_URL }: { DATABASE_URL: string }) =
             if ("deletedAt" in args.where) {
               return query(args);
             }
-            args.where = { deletedAt: null, ...args.where };
+            args.where = {
+              deletedAt: null,
+              ...args.where,
+            };
           } else {
-            args.where = { deletedAt: null };
+            args.where = {
+              deletedAt: null,
+            };
           }
           return query(args);
         },
@@ -94,9 +131,14 @@ export const createPrismaClient = ({ DATABASE_URL }: { DATABASE_URL: string }) =
             if ("deletedAt" in args.where) {
               return query(args);
             }
-            args.where = { deletedAt: null, ...args.where };
+            args.where = {
+              deletedAt: null,
+              ...args.where,
+            };
           } else {
-            args.where = { deletedAt: null };
+            args.where = {
+              deletedAt: null,
+            };
           }
           return query(args);
         },
@@ -104,7 +146,10 @@ export const createPrismaClient = ({ DATABASE_URL }: { DATABASE_URL: string }) =
           if (args.where != undefined && "deletedAt" in args.where) {
             return query(args);
           }
-          args.where = { deletedAt: null, ...args.where };
+          args.where = {
+            deletedAt: null,
+            ...args.where,
+          };
           return query(args);
         },
       },

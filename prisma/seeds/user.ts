@@ -1,8 +1,8 @@
-import { HashingService } from "@/iam/hashing/hashing.service";
-import { PrismaClient, Role } from "@/prisma";
+import { Role } from "@/prisma";
 import { getKeyOf } from "@/utils";
-
-export const data = {
+import { hashingService, prisma } from "./client-instance";
+import { data as departmentData } from "./department";
+export const usersData = {
   Admin: {
     id: 1,
     email: "admin.user@example.com",
@@ -11,6 +11,7 @@ export const data = {
     nationalId: "0000000001",
     role: Role.Admin,
     password: "12345678",
+    departmentId: undefined,
   },
   Citizen: {
     id: 2,
@@ -20,6 +21,7 @@ export const data = {
     nationalId: "0000000002",
     role: Role.Citizen,
     password: "12345678",
+    departmentId: undefined,
   },
   Debugging: {
     id: 3,
@@ -29,6 +31,7 @@ export const data = {
     nationalId: "0000000003",
     role: Role.Debugging,
     password: "12345678",
+    departmentId: departmentData[0].id,
   },
   Employee: {
     id: 4,
@@ -38,12 +41,13 @@ export const data = {
     nationalId: "0000000004",
     role: Role.Employee,
     password: "12345678",
+    departmentId: departmentData[1].id,
   },
 };
 
-export async function seedUsers(hashingService: HashingService, prisma: PrismaClient) {
-  for (const key of getKeyOf(data)) {
-    const userData = data[key];
+export async function seedUsers() {
+  for (const key of getKeyOf(usersData)) {
+    const userData = usersData[key];
     const password = await hashingService.hash({
       raw: userData.password,
     });

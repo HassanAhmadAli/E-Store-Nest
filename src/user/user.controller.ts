@@ -10,7 +10,11 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
   @SetAllowedRoles(Role.Admin, Role.Citizen)
   @Patch("profile")
-  updateProfile(@Body() updateUserDto: UpdateProfileDto, @ActiveUser("sub") id: number) {
+  updateProfile(
+    @Body()
+    updateUserDto: UpdateProfileDto,
+    @ActiveUser("sub") id: number,
+  ) {
     return this.userService.updateAdminProfile(updateUserDto, id);
   }
 
@@ -21,19 +25,30 @@ export class UserController {
 
   @SetAllowedRoles(Role.Admin)
   @Post("employee")
-  async addEmployee(@Body() createEmployeeDto: CreateEmployeeDto) {
+  async addEmployee(
+    @Body()
+    createEmployeeDto: CreateEmployeeDto,
+  ) {
     return await this.userService.addEmployee(createEmployeeDto);
   }
 
   @SetAllowedRoles(Role.Admin)
   @Patch("employee/profile/:id")
-  async updateEmployeeProfile(@Param("id", ParseIntPipe) userId: number, @Body() updateUserDto: UpdateProfileDto) {
+  async updateEmployeeProfile(
+    @Param("id", ParseIntPipe)
+    userId: number,
+    @Body()
+    updateUserDto: UpdateProfileDto,
+  ) {
     return await this.userService.updateEmployeeProfile(updateUserDto, userId);
   }
 
   @SetAllowedRoles(Role.Admin)
   @Patch("employee/promote/:id")
-  async promoteToAdmin(@Param("id", ParseIntPipe) employeeId: number) {
+  async promoteToAdmin(
+    @Param("id", ParseIntPipe)
+    employeeId: number,
+  ) {
     return await this.userService.promoteToAdmin(employeeId);
   }
 

@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { Server, Socket } from "socket.io";
+import { Namespace, Socket } from "socket.io";
 import { MessageBody } from "@nestjs/websockets";
 import { logger } from "@/utils";
 export interface Notification {
@@ -13,19 +13,21 @@ export interface Notification {
 }
 @Injectable()
 export class NotificationsService {
-  server!: Server;
-  setServer(server: Server) {
-    this.server = server;
+  namespace!: Namespace;
+
+  setNamespace(namespace: Namespace) {
+    this.namespace = namespace;
   }
   private userSockets = new Map<string, string>();
 
-  async handleRegister(client: Socket, @MessageBody() userId: string) {
-    await client.join(`user:${userId}`);
-    this.userSockets.set(userId, client.id);
-    logger.info(`User ${userId} registered with socket ID: ${client.id}`);
-    const message = { success: true, message: "Registered successfully" };
-    logger.debug({ isInstanceOf: this.server });
-    // this.server.emit("notification", message);
+  async handleRegister(socket: Socket, @MessageBody() userId: string) {
+    await socket.join("userId");
+    this.userSockets.set(userId, socket.id);
+    logger.info(`User ${userId} registered with socket ID: ${socket.id}`);
+    const message = {
+      success: true,
+      data: "Registered successfully",
+    };
     return message;
   }
 
@@ -35,7 +37,7 @@ export class NotificationsService {
     for (const [userId, socketId] of this.userSockets.entries()) {
       if (socketId === client.id) {
         this.userSockets.delete(userId);
-        await client.leave(`user:${userId}`);
+        await client.leave(userId);
         break;
       }
     }
@@ -52,7 +54,7 @@ export class NotificationsService {
       createdAt: new Date(),
     };
     // Send real-time notification
-    this.server.to(`user:${userId}`).emit("notification", notification);
+    this.namespace.to(userId).emit("notification", notification);
     return notification;
   }
 
@@ -68,7 +70,7 @@ export class NotificationsService {
     }));
     // Send real-time notifications
     userIds.forEach((userId) => {
-      this.server.to(`user:${userId}`).emit("notification", {
+      this.namespace.to(userId).emit("notification", {
         title,
         message,
         type,
@@ -85,7 +87,7 @@ export class NotificationsService {
       type,
       createdAt: new Date(),
     };
-    this.server.emit("notification", notification);
+    this.namespace.emit("notification", notification);
 
     return notification;
   }

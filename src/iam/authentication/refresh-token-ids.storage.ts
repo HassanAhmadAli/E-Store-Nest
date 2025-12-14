@@ -2,7 +2,10 @@ import { Inject, Injectable } from "@nestjs/common";
 import { CACHE_MANAGER, Cache } from "@nestjs/cache-manager";
 @Injectable()
 export class RefreshTokenIdsStorage {
-  constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {}
+  constructor(
+    @Inject(CACHE_MANAGER)
+    private cacheManager: Cache,
+  ) {}
 
   async insert(userId: number, tokenId: string): Promise<void> {
     const key = this.getKey(userId);

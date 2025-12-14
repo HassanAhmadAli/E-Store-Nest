@@ -26,8 +26,15 @@ import { AttachmentModule } from "./attachment/attachment.module";
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService<EnvVariables>) => ({
-        ttl: 5 * 1000,
-        stores: [new KeyvRedis(configService.getOrThrow("REDIS_DATABASE_URL", { infer: true }), {})],
+        ttl: 5 * 60 * 1000,
+        stores: [
+          new KeyvRedis(
+            configService.getOrThrow("REDIS_DATABASE_URL", {
+              infer: true,
+            }),
+            {},
+          ),
+        ],
       }),
     }),
     env!.ENABLE_Devtools

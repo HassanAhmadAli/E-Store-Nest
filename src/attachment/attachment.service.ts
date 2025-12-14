@@ -19,7 +19,9 @@ export class AttachmentService {
     });
   }
   async downloadFile(id: string) {
-    const fileRecord = await this.prisma.storedFile.findUniqueOrThrow({ where: { id } });
+    const fileRecord = await this.prisma.storedFile.findUniqueOrThrow({
+      where: { id },
+    });
     const file = createReadStream(fileRecord.path);
     return new StreamableFile(file, {
       type: fileRecord.mimetype,

@@ -13,7 +13,13 @@ import { logger } from "@/utils";
 export class PrismaServerErrorFilter implements ExceptionFilter {
   catch(
     exception: PrismaClientKnownRequestError & {
-      meta: { driverAdapterError?: { cause?: { originalMessage?: string } } };
+      meta: {
+        driverAdapterError?: {
+          cause?: {
+            originalMessage?: string;
+          };
+        };
+      };
     },
   ) {
     const originalMessage = exception.meta.driverAdapterError?.cause?.originalMessage;

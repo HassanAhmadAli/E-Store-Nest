@@ -44,9 +44,13 @@ import { RolesGuard } from "./authorization/guards/roles.guard";
       useFactory(configService: ConfigService<EnvVariables>) {
         return {
           transport: {
-            host: configService.get("APP_EMAIL_HOST", { infer: true }),
+            host: configService.get("APP_EMAIL_HOST", {
+              infer: true,
+            }),
             auth: {
-              user: configService.get("APP_EMAIL_User", { infer: true }),
+              user: configService.get("APP_EMAIL_User", {
+                infer: true,
+              }),
               pass: configService.get("APP_EMAIL_Password", { infer: true }),
             },
           },
@@ -59,13 +63,23 @@ import { RolesGuard } from "./authorization/guards/roles.guard";
         return {
           secret: config.get("JWT_SECRET", { infer: true }),
           signOptions: {
-            audience: config.get("JWT_AUDIENCE", { infer: true }),
-            issuer: config.get("JWT_ISSUER", { infer: true }),
-            expiresIn: config.get("JWT_TTL", { infer: true }),
+            audience: config.get("JWT_AUDIENCE", {
+              infer: true,
+            }),
+            issuer: config.get("JWT_ISSUER", {
+              infer: true,
+            }),
+            expiresIn: config.get("JWT_TTL", {
+              infer: true,
+            }),
           },
           verifyOptions: {
-            audience: config.get("JWT_AUDIENCE", { infer: true }),
-            issuer: config.get("JWT_ISSUER", { infer: true }),
+            audience: config.get("JWT_AUDIENCE", {
+              infer: true,
+            }),
+            issuer: config.get("JWT_ISSUER", {
+              infer: true,
+            }),
           },
         };
       },

@@ -1,20 +1,18 @@
 import { CallHandler, ExecutionContext, Injectable, NestInterceptor, RequestTimeoutException } from "@nestjs/common";
-import * as rxjs from "rxjs";
+import { timeout, catchError, throwError, TimeoutError, Observable } from "rxjs";
 
 @Injectable()
 export class TimeoutInterceptor implements NestInterceptor {
-  private genTimoutError = () => {
-    return new RequestTimeoutException();
-  };
-  createTimeoutError = () => new RequestTimeoutException();
-  intercept(_context: ExecutionContext, next: CallHandler): rxjs.Observable<any> {
+  intercept(_context: ExecutionContext, next: CallHandler): Observable<any> {
     return next.handle().pipe(
-      rxjs.timeout(3000),
-      rxjs.catchError((error) => {
-        if (error instanceof rxjs.TimeoutError) {
-          return rxjs.throwError(this.genTimoutError);
+      timeout(3000),
+      catchError((error: unknown) => {
+        if (error instanceof TimeoutError) {
+          return throwError(() => {
+            return new RequestTimeoutException();
+          });
         }
-        return rxjs.throwError(() => error as unknown);
+        return throwError(() => error);
       }),
     );
   }

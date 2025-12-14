@@ -37,7 +37,8 @@ export class ComplaintsController {
   citizenAttachFileToComplaint(
     @Param("id") complaintId: string,
     @ActiveUser("sub") citizenId: number,
-    @UploadedFile(new FileMimeStandarizingPipe()) file: Express.Multer.File,
+    @UploadedFile(new FileMimeStandarizingPipe())
+    file: Express.Multer.File,
   ) {
     console.log({ complaintId, citizenId, file });
     return this.complaintsService.citizenAttachFileToComplaint(citizenId, complaintId, file);

@@ -66,7 +66,9 @@ export class UserService {
     return user;
   }
   async addEmployee({ password: rawPassword, ...createEcmployeeDto }: CreateEmployeeDto) {
-    const password = await this.hashingService.hash({ raw: rawPassword });
+    const password = await this.hashingService.hash({
+      raw: rawPassword,
+    });
     return await this.prisma.user.create({
       data: {
         ...createEcmployeeDto,

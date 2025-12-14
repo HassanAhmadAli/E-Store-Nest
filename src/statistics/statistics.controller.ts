@@ -7,6 +7,8 @@ export class StatisticsController {
   //todo: Manage Statistics
   @Get()
   manageStatistics() {
-    return { message: "Manage Statistics" };
+    return {
+      message: "Manage Statistics",
+    };
   }
 }

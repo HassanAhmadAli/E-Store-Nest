@@ -1,5 +1,4 @@
-import { PrismaClient } from "@/prisma";
-
+import { prisma } from "./client-instance";
 export const data = [
   {
     id: 1,
@@ -23,7 +22,7 @@ export const data = [
   },
 ] as const;
 
-export async function seedDepartments(prisma: PrismaClient) {
+export async function seedDepartments() {
   for (const department of data) {
     await prisma.department.create({
       data: department,
