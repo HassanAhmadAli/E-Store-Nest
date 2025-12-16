@@ -1,4 +1,3 @@
-// @ts-check
 import eslint from "@eslint/js";
 import globals from "globals";
 import { defineConfig } from "eslint/config";

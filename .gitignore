@@ -61,7 +61,7 @@ pnpm-lock.yaml
 
 # openapi
 src/metadata.ts
-/generated/prisma
+**/generated/
 prisma/migrations/*
 !prisma/migrations/migration_lock.toml
 .vscode/
