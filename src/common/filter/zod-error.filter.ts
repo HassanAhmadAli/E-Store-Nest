@@ -1,9 +1,9 @@
-import { BaseExceptionFilter } from "@nestjs/core";
 import { prettifyError, ZodError } from "zod";
-import { ArgumentsHost, Catch, BadRequestException } from "@nestjs/common";
+import { Catch, BadRequestException, ArgumentsHost } from "@nestjs/common";
+import { AppBaseExceptionFilter } from "../app_filter";
 @Catch(ZodError)
-export class ZodErrorFilter extends BaseExceptionFilter {
-  override catch(exception: ZodError, host: ArgumentsHost) {
+export class ZodErrorFilter extends AppBaseExceptionFilter {
+  override catch(exception: ZodError<unknown>, host: ArgumentsHost) {
     const error = new BadRequestException(prettifyError(exception));
     return super.catch(error, host);
   }

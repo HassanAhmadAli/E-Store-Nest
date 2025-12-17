@@ -19,6 +19,7 @@ import morgan from "morgan";
 import { env } from "@/common/env";
 import { CommentModule } from "./comment/comment.module";
 import { AttachmentModule } from "./attachment/attachment.module";
+
 @Module({
   imports: [
     CacheModule.registerAsync({
@@ -72,7 +73,6 @@ import { AttachmentModule } from "./attachment/attachment.module";
       provide: APP_INTERCEPTOR,
       useClass: ZodSerializerInterceptor,
     },
-
     {
       provide: APP_INTERCEPTOR,
       useClass: TimeoutInterceptor,

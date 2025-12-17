@@ -11,9 +11,9 @@ import {
 import { Namespace, Socket } from "socket.io";
 import { NotificationsService } from "./notifications.service";
 import { logger } from "@/utils";
-import { UseInterceptors } from "@nestjs/common";
-import { TimeoutInterceptor } from "@/common/interceptors/timeout.interceptor";
-@UseInterceptors(TimeoutInterceptor)
+import { UseStandardGatewaySetup } from "@/common/decorators/standard-gateway.decorator";
+
+@UseStandardGatewaySetup()
 @WebSocketGateway({
   cors: { origin: "*" },
   namespace: "/notifications",
@@ -21,7 +21,7 @@ import { TimeoutInterceptor } from "@/common/interceptors/timeout.interceptor";
 export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit {
   constructor(private readonly notificationsService: NotificationsService) {}
   @WebSocketServer()
-  private namespace!: Namespace;
+  protected namespace!: Namespace;
 
   afterInit(namespace: Namespace) {
     this.notificationsService.setNamespace(namespace);
@@ -34,7 +34,6 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
   async handleDisconnect(client: Socket) {
     return this.notificationsService.handleDisconnect(client);
   }
-
   @SubscribeMessage("register")
   async handleRegister(@ConnectedSocket() socket: Socket, @MessageBody() userId: string) {
     return await this.notificationsService.handleRegister(socket, userId);

@@ -1,18 +1,17 @@
 import { ArgumentsHost, BadRequestException, Catch, HttpException } from "@nestjs/common";
-import { BaseExceptionFilter } from "@nestjs/core";
 import { ZodSerializationException, ZodValidationException } from "nestjs-zod";
 import { prettifyError, ZodError } from "zod";
+import { AppBaseExceptionFilter } from "../app_filter";
 
 @Catch(HttpException)
-export class HttpExceptionFilter extends BaseExceptionFilter {
+export class HttpExceptionFilter extends AppBaseExceptionFilter {
   override catch(exception: HttpException, host: ArgumentsHost) {
     if (exception instanceof ZodSerializationException || exception instanceof ZodValidationException) {
       const zodError = exception.getZodError();
       if (zodError instanceof ZodError) {
-        const e = new BadRequestException(prettifyError(zodError));
-        return super.catch(e, host);
+        exception = new BadRequestException(prettifyError(zodError));
       }
     }
-    super.catch(exception, host);
+    return super.catch(exception, host);
   }
 }

@@ -1,18 +1,20 @@
 import {
+  ArgumentsHost,
   BadRequestException,
   Catch,
   ConflictException,
-  ExceptionFilter,
+  HttpException,
   InternalServerErrorException,
   NotFoundException,
 } from "@nestjs/common";
 import { PrismaClientKnownRequestError } from "@/prisma";
 import { logger } from "@/utils";
+import { AppBaseExceptionFilter } from "@/common/app_filter";
 
 @Catch(PrismaClientKnownRequestError)
-export class PrismaServerErrorFilter implements ExceptionFilter {
-  catch(
-    exception: PrismaClientKnownRequestError & {
+export class PrismaServerErrorFilter extends AppBaseExceptionFilter {
+  override catch(
+    error: PrismaClientKnownRequestError & {
       meta: {
         driverAdapterError?: {
           cause?: {
@@ -21,38 +23,50 @@ export class PrismaServerErrorFilter implements ExceptionFilter {
         };
       };
     },
+    host: ArgumentsHost,
   ) {
-    const originalMessage = exception.meta.driverAdapterError?.cause?.originalMessage;
-    switch (exception.code) {
+    const originalMessage = error.meta.driverAdapterError?.cause?.originalMessage;
+    let exception: HttpException | undefined = undefined;
+    switch (error.code) {
       case "P2002": {
-        throw new ConflictException(originalMessage || "Database Unique Constraint Failed");
+        exception = new ConflictException(originalMessage || "Database Unique Constraint Failed");
+        break;
       }
       case "P2003": {
-        throw new BadRequestException(originalMessage || "Foreign key constraint Failed");
+        exception = new BadRequestException(originalMessage || "Foreign key constraint Failed");
+        break;
       }
       case "P2006": {
-        throw new BadRequestException(originalMessage || "Invalid data provided for Field");
+        exception = new BadRequestException(originalMessage || "Invalid data provided for Field");
+        break;
       }
       case "P2011": {
-        throw new BadRequestException(originalMessage || "Missing required value");
+        exception = new BadRequestException(originalMessage || "Missing required value");
+        break;
       }
       case "P2014": {
-        throw new BadRequestException(originalMessage || "The requested change violates a required relation.");
+        exception = new BadRequestException(originalMessage || "The requested change violates a required relation.");
+        break;
       }
       case "P2022": {
-        throw new InternalServerErrorException(originalMessage || "column does not exist in the current database");
+        exception = new InternalServerErrorException(
+          originalMessage || "column does not exist in the current database",
+        );
+        break;
       }
       case "P2025": {
-        throw new NotFoundException(originalMessage || "Record not found");
+        exception = new NotFoundException(originalMessage || "Record not found");
+        break;
       }
       default: {
         logger.error({
           caller: "PrismaServerErrorFilter",
           message: "unknown Exception",
-          value: exception,
+          value: error,
         });
-        throw new BadRequestException(originalMessage || `Prisma Validation Error`);
+        if (exception == undefined) exception = new BadRequestException(originalMessage || `Prisma Validation Error`);
       }
     }
+    return super.catch(exception, host);
   }
 }
