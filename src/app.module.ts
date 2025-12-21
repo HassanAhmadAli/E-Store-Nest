@@ -19,9 +19,16 @@ import morgan from "morgan";
 import { env } from "@/common/env";
 import { CommentModule } from "./comment/comment.module";
 import { AttachmentModule } from "./attachment/attachment.module";
-
+import { ScheduleModule } from "@nestjs/schedule";
+import { BullModule } from "@nestjs/bullmq";
 @Module({
   imports: [
+    BullModule.forRoot({
+      connection: {
+        url: env!.REDIS_DATABASE_URL,
+      },
+    }),
+    ScheduleModule.forRoot(),
     CacheModule.registerAsync({
       isGlobal: true,
       imports: [ConfigModule],

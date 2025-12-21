@@ -2,21 +2,34 @@ import { Injectable } from "@nestjs/common";
 import { Namespace, Socket } from "socket.io";
 import { MessageBody } from "@nestjs/websockets";
 import { logger } from "@/utils";
-export interface Notification {
-  id: string;
-  userId: string;
-  title: string;
-  message: string;
-  type: "info" | "success" | "warning" | "error";
-  read: boolean;
-  createdAt: Date;
-}
+import { Interval } from "@nestjs/schedule";
+import { PrismaService } from "@/prisma";
+import { InjectQueue } from "@nestjs/bullmq";
+import { Keys } from "@/common/const";
+import { Queue } from "bullmq";
+import { Notification } from "./notification.interface";
 @Injectable()
 export class NotificationsService {
   namespace!: Namespace;
 
+  constructor(
+    private readonly prismaService: PrismaService,
+    @InjectQueue(Keys.notification) private audioQueue: Queue,
+  ) {}
+  get prisma() {
+    return this.prismaService.client;
+  }
   setNamespace(namespace: Namespace) {
     this.namespace = namespace;
+  }
+
+  @Interval(5 * 1000)
+  async x() {
+    logger.info("interval");
+    logger.info(await this.audioQueue.count());
+    // const job = await this.audioQueue.add("transcode", {
+    //   foo: "bar",
+    // });
   }
   private userSockets = new Map<string, string>();
 

@@ -4,13 +4,13 @@ import { Prisma, PrismaService, Complaint } from "@/prisma";
 import { UpdateComplaintDto } from "./dto/update-complaint.dto";
 import { getKeysOfTrue } from "@/utils";
 import { PaginationQueryDto } from "@/common/dto/pagination-query.dto";
+
 @Injectable()
 export class ComplaintsService {
   constructor(private readonly prismaService: PrismaService) {}
   private get prisma() {
     return this.prismaService.client;
   }
-
   async raiseComplaint(createComplaintDto: CreateComplaintDto, citizenId: number) {
     return await this.prisma.complaint.create({
       data: {
@@ -95,14 +95,7 @@ export class ComplaintsService {
           departmentId: true,
         },
       });
-      const complaints = await tx.$queryRaw<Complaint[]>(
-        Prisma.sql`SELECT * FROM "Complaint" WHERE "id" = ${complaintId} AND "Complaint"."deletedAt" IS NULL FOR UPDATE`,
-      );
-      if (complaints == undefined || complaints.length === 0) {
-        console.log({ complaints });
-        throw new ConflictException("Complaint not found");
-      }
-      const complaint = complaints[0]!;
+      const complaint = await this.prismaService.complaint.findForUpdate(tx, complaintId);
       if (complaint.departmentId != employee.departmentId) {
         throw new UnauthorizedException("You does not belone to the same department of this complaint");
       }
@@ -140,17 +133,10 @@ export class ComplaintsService {
 
   async updateStatus(complaintId: string, employeeId: number, updateComplaintDto: UpdateComplaintDto) {
     return await this.prisma.$transaction(async (tx) => {
-      const complaints = await tx.$queryRaw<Complaint[]>(
-        Prisma.sql`SELECT * FROM "Complaint" WHERE "id" = ${complaintId} AND "Complaint"."deletedAt" IS NULL FOR UPDATE`,
-      );
-      const complaint = complaints[0];
-      if (complaint == undefined) {
-        throw new ConflictException("Complaint does not exist");
-      }
+      const complaint = await this.prismaService.complaint.findForUpdate(tx, complaintId);
       if (complaint?.assignedEmployeeId !== employeeId) {
         throw new ConflictException("Employee does not have permissions on this complaint");
       }
-
       //todo: set the logs
       const updatedComplaint = await tx.complaint.update({
         where: {
@@ -169,13 +155,7 @@ export class ComplaintsService {
   }
   async archiveComplaint(complaintId: string, employeeId: number) {
     return await this.prisma.$transaction(async (tx) => {
-      const complaints = await tx.$queryRaw<Complaint[]>(
-        Prisma.sql`SELECT * FROM "Complaint" WHERE "id" = ${complaintId} AND "Complaint"."deletedAt" IS NULL FOR UPDATE`,
-      );
-      const complaint = complaints[0];
-      if (complaint == undefined) {
-        throw new ConflictException("Complaint Not Found");
-      }
+      const complaint = await this.prismaService.complaint.findForUpdate(tx, complaintId);
       if (complaint.isArchived === true) {
         throw new ConflictException("Complaint already archived");
       }

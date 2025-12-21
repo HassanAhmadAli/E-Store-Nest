@@ -4,12 +4,14 @@ generator client {
   moduleFormat = "cjs"
   engineType   = "client"
 }
+
 /**
-generator zod {
-  provider = "prisma-zod-generator"
-  output   = "../src/prisma/generated/zod"
-  config   = "./zod-generator.config.json"
-}/**/
+ * generator zod {
+ * provider = "prisma-zod-generator"
+ * output   = "../src/prisma/generated/zod"
+ * config   = "./zod-generator.config.json"
+ * }/*
+ */
 
 datasource db {
   provider = "postgresql"
@@ -40,6 +42,11 @@ enum AuditAction {
   UPDATE
   DELETE
   STATUS_CHANGE
+}
+
+model errors {
+  id    Int  @id @default(autoincrement())
+  error Json @db.JsonB
 }
 
 model Department {

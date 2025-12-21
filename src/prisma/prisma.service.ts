@@ -1,8 +1,10 @@
-import { PrismaClient } from "./generated/prisma-client/client";
-import { Injectable, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
+import { Complaint, Prisma, PrismaClient } from "./generated/prisma-client/client";
+import { ConflictException, Injectable, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { ConfigService } from "@nestjs/config";
 import { EnvVariables } from "@/common/schema/env";
+import { softDeletePrismaExtension } from "./soft-delete";
+
 export const createPrismaClient = ({ DATABASE_URL }: { DATABASE_URL: string }) => {
   const adapter = new PrismaPg({
     connectionString: DATABASE_URL,
@@ -11,150 +13,7 @@ export const createPrismaClient = ({ DATABASE_URL }: { DATABASE_URL: string }) =
   const prisma = new PrismaClient({
     adapter,
     log: ["query"],
-  }).$extends({
-    query: {
-      $allModels: {
-        async aggregate({ args, query }) {
-          if (args.where != undefined && "deletedAt" in args.where) {
-            return query(args);
-          }
-          args.where = {
-            deletedAt: null,
-            ...args.where,
-          };
-          return query(args);
-        },
-        async count({ args, query }) {
-          if (args.where != undefined && "deletedAt" in args.where) {
-            return query(args);
-          }
-          args.where = {
-            deletedAt: null,
-            ...args.where,
-          };
-          return query(args);
-        },
-        async findFirst({ args, query }) {
-          if (args.where != undefined && "deletedAt" in args.where) {
-            return query(args);
-          }
-          args.where = {
-            deletedAt: null,
-            ...args.where,
-          };
-          return query(args);
-        },
-        async findFirstOrThrow({ args, query }) {
-          if (args.where != undefined && "deletedAt" in args.where) {
-            return query(args);
-          }
-          args.where = {
-            deletedAt: null,
-            ...args.where,
-          };
-          return query(args);
-        },
-        async findMany({ args, query }) {
-          if (args.where != undefined && "deletedAt" in args.where) {
-            return query(args);
-          }
-          args.where = {
-            deletedAt: null,
-            ...args.where,
-          };
-          return query(args);
-        },
-        async findUnique({ args, query }) {
-          if (args.where != undefined && "deletedAt" in args.where) {
-            return query(args);
-          }
-          args.where = {
-            deletedAt: null,
-            ...args.where,
-          };
-          return query(args);
-        },
-        async findUniqueOrThrow({ args, query }) {
-          if (args.where != undefined && "deletedAt" in args.where) {
-            return query(args);
-          }
-          args.where = {
-            deletedAt: null,
-            ...args.where,
-          };
-          return query(args);
-        },
-        async groupBy({ args, query }) {
-          if (args.where) {
-            if (args.where != undefined && "deletedAt" in args.where) {
-              return query(args);
-            }
-            args.where = {
-              deletedAt: null,
-              ...args.where,
-            };
-          } else {
-            args.where = {
-              deletedAt: null,
-            };
-          }
-          return query(args);
-        },
-        async update({ args, query }) {
-          if (args.where != undefined && "deletedAt" in args.where) {
-            return query(args);
-          }
-          args.where = {
-            deletedAt: null,
-            ...args.where,
-          };
-          return query(args);
-        },
-        async updateMany({ args, query }) {
-          if (args.where != undefined) {
-            if ("deletedAt" in args.where) {
-              return query(args);
-            }
-            args.where = {
-              deletedAt: null,
-              ...args.where,
-            };
-          } else {
-            args.where = {
-              deletedAt: null,
-            };
-          }
-          return query(args);
-        },
-        async updateManyAndReturn({ args, query }) {
-          if (args.where != undefined) {
-            if ("deletedAt" in args.where) {
-              return query(args);
-            }
-            args.where = {
-              deletedAt: null,
-              ...args.where,
-            };
-          } else {
-            args.where = {
-              deletedAt: null,
-            };
-          }
-          return query(args);
-        },
-        async upsert({ args, query }) {
-          if (args.where != undefined && "deletedAt" in args.where) {
-            return query(args);
-          }
-          args.where = {
-            deletedAt: null,
-            ...args.where,
-          };
-          return query(args);
-        },
-      },
-    },
-  });
+  }).$extends(softDeletePrismaExtension);
   return prisma;
 };
 @Injectable()
@@ -165,6 +24,17 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
       DATABASE_URL: configService.getOrThrow("DATABASE_URL", { infer: true }),
     });
   }
+  public readonly complaint = {
+    async findForUpdate(tx: Pick<Prisma.TransactionClient, "$queryRaw">, complaintId: string) {
+      const complaints = await tx.$queryRaw<Complaint[]>(
+        Prisma.sql`SELECT * FROM "Complaint" WHERE "id" = ${complaintId} AND "Complaint"."deletedAt" IS NULL FOR UPDATE`,
+      );
+      if (complaints == undefined || complaints.length === 0 || complaints[0] == undefined) {
+        throw new ConflictException("Complaint not found");
+      }
+      return complaints[0];
+    },
+  } as const;
 
   async onModuleInit() {
     await this.client.$connect();

@@ -23,14 +23,26 @@ export const logger = Pino({
   level: "trace",
   timestamp: true,
   transport: {
-    target: "pino-pretty",
-    options: {
-      colorize: true,
-      translateTime: "SYS:yyyy-mm-dd HH:MM:ss.l",
-      ignore: "pid,hostname",
-      singleLine: true,
-      colorizeObjects: true,
-    } satisfies PinoPretty.PrettyOptions,
+    targets: [
+      {
+        target: "pino-pretty",
+        level: "trace",
+        options: {
+          colorize: true,
+          translateTime: "SYS:yyyy-mm-dd HH:MM:ss.l",
+          ignore: "pid,hostname",
+          singleLine: true,
+          colorizeObjects: true,
+        } satisfies PinoPretty.PrettyOptions,
+      },
+      {
+        target: "pino/file",
+        level: "error",
+        options: {
+          destination: "./errors.log",
+        },
+      },
+    ],
   },
 });
 export const getStatusColor = (status: number) => {
