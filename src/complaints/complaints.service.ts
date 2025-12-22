@@ -1,18 +1,43 @@
 import { ConflictException, Injectable, UnauthorizedException } from "@nestjs/common";
 import { CreateComplaintDto } from "./dto/create-complaint.dto";
-import { Prisma, PrismaService, Complaint } from "@/prisma";
+import { Prisma, PrismaService } from "@/prisma";
 import { UpdateComplaintDto } from "./dto/update-complaint.dto";
-import { getKeysOfTrue } from "@/utils";
+import { getEntriesOfTrue } from "@/utils";
 import { PaginationQueryDto } from "@/common/dto/pagination-query.dto";
-
+import { Notification } from "@/notifications/notification.interface";
+import { CachingService } from "@/common/caching/caching.service";
+import { InjectQueue } from "@nestjs/bullmq";
+import { Keys } from "@/common/const";
+import { Queue } from "bullmq";
 @Injectable()
 export class ComplaintsService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly cachingService: CachingService,
+    @InjectQueue(Keys.notification) private readonly notificationQueue: Queue<Notification>,
+  ) {}
   private get prisma() {
     return this.prismaService.client;
   }
+
+  private async notifyUser(
+    notification: {
+      userId: number;
+      title: Notification["title"];
+      message: Notification["message"];
+      email: Notification["email"];
+    },
+    type: Notification["type"] = "info",
+  ) {
+    await this.notificationQueue.add("send-notification", {
+      ...notification,
+      type,
+      createdAt: new Date(),
+    });
+  }
+
   async raiseComplaint(createComplaintDto: CreateComplaintDto, citizenId: number) {
-    return await this.prisma.complaint.create({
+    const res = await this.prisma.complaint.create({
       data: {
         ...createComplaintDto,
         citizenId,
@@ -25,8 +50,15 @@ export class ComplaintsService {
         assignedEmployeeId: true,
       },
     });
+    await this.notifyUser({
+      userId: citizenId,
+      title: "complaint raised",
+      message: "your complaint was successfully raised",
+      email: null,
+    });
+    return res;
   }
-  async citizenAttachFileToComplaint(citizenId: number, complaintId: string, file: Express.Multer.File) {
+  async citizenAttachFileToComplaint(citizenId: number, email: string, complaintId: string, file: Express.Multer.File) {
     const storedFile = await this.prisma.storedFile.create({
       data: {
         id: file.filename,
@@ -47,8 +79,15 @@ export class ComplaintsService {
         storedFileId: true,
       },
     });
+    await this.notifyUser({
+      userId: citizenId,
+      title: "attachment upload",
+      message: "attachment was successfully uploaded",
+      email,
+    });
     return attachment;
   }
+
   async getComplaintsAttachments(complaintId: string, { limit, offset, deleted, deletedAt }: PaginationQueryDto) {
     return await this.prisma.attachment.findMany({
       where: {
@@ -84,6 +123,7 @@ export class ComplaintsService {
       },
     });
   }
+
   async assignComplaint(complaintId: string, employeeId: number) {
     return this.prisma.$transaction(async (tx) => {
       const employee = await tx.user.findUniqueOrThrow({
@@ -99,7 +139,7 @@ export class ComplaintsService {
       if (complaint.departmentId != employee.departmentId) {
         throw new UnauthorizedException("You does not belone to the same department of this complaint");
       }
-      return await tx.complaint.update({
+      const res = await tx.complaint.update({
         where: {
           id: complaintId,
         },
@@ -107,6 +147,14 @@ export class ComplaintsService {
           assignedEmployeeId: employeeId,
         },
       });
+      const { email } = await this.cachingService.users.getCachedUserData(res.citizenId);
+      await this.notifyUser({
+        userId: res.citizenId,
+        title: "complaint update",
+        message: "an employee was assigned to your complaint, a response will be given soon",
+        email,
+      });
+      return res;
     });
   }
   async getEmployeeComplaints(employeeId: number) {
@@ -141,18 +189,25 @@ export class ComplaintsService {
       const updatedComplaint = await tx.complaint.update({
         where: {
           id: complaintId,
-
           assignedEmployeeId: employeeId,
         },
         data: updateComplaintDto,
         select: {
-          ...getKeysOfTrue(updateComplaintDto),
+          ...getEntriesOfTrue(updateComplaintDto),
           id: true,
         } satisfies Prisma.ComplaintSelect,
+      });
+      const { email } = await this.cachingService.users.getCachedUserData(complaint.citizenId);
+      await this.notifyUser({
+        userId: complaint.citizenId,
+        title: "complaint status update",
+        message: `the status of your complaint was updated to ${updateComplaintDto.status}`,
+        email,
       });
       return updatedComplaint;
     });
   }
+
   async archiveComplaint(complaintId: string, employeeId: number) {
     return await this.prisma.$transaction(async (tx) => {
       const complaint = await this.prismaService.complaint.findForUpdate(tx, complaintId);
@@ -162,7 +217,7 @@ export class ComplaintsService {
       if (complaint.assignedEmployeeId !== employeeId) {
         throw new ConflictException("Employee does not have permissions to archive this Complaint");
       }
-      return await tx.complaint.update({
+      const res = await tx.complaint.update({
         where: {
           id: complaintId,
         },
@@ -170,6 +225,14 @@ export class ComplaintsService {
           isArchived: true,
         },
       });
+      const { email } = await this.cachingService.users.getCachedUserData(res.citizenId);
+      await this.notifyUser({
+        userId: res.citizenId,
+        title: "complaint archived",
+        message: "your complaint was archived by the assigned employee",
+        email,
+      });
+      return res;
     });
   }
 }

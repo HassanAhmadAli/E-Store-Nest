@@ -90,7 +90,6 @@ model Complaint {
   assignedEmployee User?          @relation("EmployeeComplaints", fields: [assignedEmployeeId], references: [id], onDelete: SetNull)
   lockedBy         User?          @relation("UserLockedComplaints", fields: [lockedById], references: [id])
   logs             ComplaintLog[]
-  notifications    Notification[]
   attachments      Attachment[]
   comments         Comment[]
 
@@ -212,7 +211,6 @@ model User {
   complaintsAssigned Complaint[]    @relation("EmployeeComplaints")
   complaints         Complaint[]    @relation("UserLockedComplaints")
   logsCreated        ComplaintLog[] // Tracks who updated a complaint status
-  notifications      Notification[]
   comments           Comment[]
   attachments        Attachment[]
 
@@ -224,27 +222,4 @@ model User {
   //
   @@index([departmentId])
   @@index([email, role, id])
-}
-
-model Notification {
-  id      Int     @id @default(autoincrement())
-  //
-  message String
-  isRead  Boolean @default(false)
-
-  //
-  userId      Int
-  complaintId String?
-
-  //
-  user      User       @relation(fields: [userId], references: [id])
-  complaint Complaint? @relation(fields: [complaintId], references: [id])
-
-  //
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-
-  //
-  @@index([userId, complaintId])
 }

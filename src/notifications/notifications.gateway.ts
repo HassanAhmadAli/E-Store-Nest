@@ -12,7 +12,7 @@ import { Namespace, Socket } from "socket.io";
 import { NotificationsService } from "./notifications.service";
 import { logger } from "@/utils";
 import { UseStandardGatewaySetup } from "@/common/decorators/standard-gateway.decorator";
-import { Interval } from "@nestjs/schedule";
+
 @UseStandardGatewaySetup()
 @WebSocketGateway({
   cors: { origin: "*" },
@@ -35,8 +35,8 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
     return this.notificationsService.handleDisconnect(client);
   }
 
-  @SubscribeMessage("register")
-  async handleRegister(@ConnectedSocket() socket: Socket, @MessageBody() accessToken: string) {
-    return await this.notificationsService.handleRegister(socket, accessToken);
+  @SubscribeMessage("login")
+  async handleLogin(@ConnectedSocket() socket: Socket, @MessageBody() accessToken: string) {
+    return await this.notificationsService.handleLogin(socket, accessToken);
   }
 }

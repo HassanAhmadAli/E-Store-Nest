@@ -2,9 +2,10 @@ import { Injectable } from "@nestjs/common";
 import { Prisma, PrismaService, Role } from "@/prisma";
 import { Public } from "@/common/decorators/public.decorator";
 import { UpdateProfileDto } from "./dto/update-profile.dto";
-import { getKeysOfTrue } from "@/utils";
+import { getEntriesOfTrue } from "@/utils";
 import { HashingService } from "@/iam/hashing/hashing.service";
 import { CreateEmployeeDto } from "./dto/create-user.dto";
+import { CachingService } from "@/common/caching/caching.service";
 
 @Public()
 @Injectable()
@@ -12,12 +13,13 @@ export class UserService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly hashingService: HashingService,
+    private readonly cachingService: CachingService,
   ) {}
   get prisma() {
     return this.prismaService.client;
   }
   async updateAdminProfile(updateUserDto: UpdateProfileDto, userId: number) {
-    return await this.prisma.user.update({
+    const res = await this.prisma.user.update({
       where: {
         id: userId,
         role: {
@@ -26,12 +28,14 @@ export class UserService {
       },
       data: updateUserDto,
       select: {
-        ...getKeysOfTrue(updateUserDto),
+        ...getEntriesOfTrue(updateUserDto),
         phoneNumber: true,
         email: true,
         password: false,
       } satisfies Prisma.UserSelect,
     });
+    await this.cachingService.users.removeCachedUserData(userId);
+    return res;
   }
   async getProfile(userId: number) {
     return await this.prisma.user.findUniqueOrThrow({
@@ -58,7 +62,7 @@ export class UserService {
       },
       data: updateUserDto,
       select: {
-        ...getKeysOfTrue(updateUserDto),
+        ...getEntriesOfTrue(updateUserDto),
         email: true,
         phoneNumber: true,
       } satisfies Prisma.UserSelect,

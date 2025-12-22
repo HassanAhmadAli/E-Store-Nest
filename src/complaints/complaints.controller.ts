@@ -13,7 +13,7 @@ import {
 import { ComplaintsService } from "./complaints.service";
 import { CreateComplaintDto } from "./dto/create-complaint.dto";
 
-import { ActiveUser } from "@/iam/decorators/ActiveUser.decorator";
+import { ActiveUser, type ActiveUserType } from "@/iam/decorators/ActiveUser.decorator";
 import { UpdateComplaintDto } from "./dto/update-complaint.dto";
 import { SetAllowedRoles } from "@/iam/authorization/decorators/roles.decorator";
 import { Role } from "@/prisma";
@@ -27,21 +27,24 @@ export class ComplaintsController {
 
   @SetAllowedRoles(Role.Citizen)
   @Post("raise")
-  raiseComplaint(@Body() createComplaintDto: CreateComplaintDto, @ActiveUser("sub") citizenId: number) {
-    return this.complaintsService.raiseComplaint(createComplaintDto, citizenId);
+  async raiseComplaint(
+    @Body() createComplaintDto: CreateComplaintDto,
+    @ActiveUser("sub") citizenId: ActiveUserType["sub"],
+  ) {
+    return await this.complaintsService.raiseComplaint(createComplaintDto, citizenId);
   }
 
   @SetAllowedRoles(Role.Citizen)
   @Post(":id/attachment")
   @UseInterceptors(FileInterceptor("file"))
-  citizenAttachFileToComplaint(
+  async citizenAttachFileToComplaint(
     @Param("id") complaintId: string,
-    @ActiveUser("sub") citizenId: number,
+    @ActiveUser() { sub: citizenId, email }: ActiveUserType,
     @UploadedFile(new FileMimeStandarizingPipe())
     file: Express.Multer.File,
   ) {
     console.log({ complaintId, citizenId, file });
-    return this.complaintsService.citizenAttachFileToComplaint(citizenId, complaintId, file);
+    return await this.complaintsService.citizenAttachFileToComplaint(citizenId, email, complaintId, file);
   }
   @SetAllowedRoles(Role.Citizen)
   @Get(":id/attachment")
