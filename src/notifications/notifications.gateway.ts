@@ -36,7 +36,7 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
   }
 
   @SubscribeMessage("register")
-  async handleRegister(@ConnectedSocket() socket: Socket, @MessageBody() userId: string) {
-    return await this.notificationsService.handleRegister(socket, userId);
+  async handleRegister(@ConnectedSocket() socket: Socket, @MessageBody() accessToken: string) {
+    return await this.notificationsService.handleRegister(socket, accessToken);
   }
 }

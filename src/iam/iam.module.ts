@@ -85,6 +85,6 @@ import { RolesGuard } from "./authorization/guards/roles.guard";
       },
     }),
   ],
-  exports: [HashingService],
+  exports: [HashingService, JwtModule],
 })
 export class IdentityAndAccessManagementModule {}

@@ -21,6 +21,7 @@ import { CommentModule } from "./comment/comment.module";
 import { AttachmentModule } from "./attachment/attachment.module";
 import { ScheduleModule } from "@nestjs/schedule";
 import { BullModule } from "@nestjs/bullmq";
+import { CachingService } from "./common/caching/caching.service";
 @Module({
   imports: [
     BullModule.forRoot({
@@ -84,6 +85,7 @@ import { BullModule } from "@nestjs/bullmq";
       provide: APP_INTERCEPTOR,
       useClass: TimeoutInterceptor,
     },
+    CachingService,
   ],
 })
 export class AppModule implements NestModule {

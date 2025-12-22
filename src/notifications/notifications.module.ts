@@ -5,8 +5,13 @@ import { NotificationsGateway } from "./notifications.gateway";
 import { BullModule } from "@nestjs/bullmq";
 import { env } from "@/common/env";
 import { Keys } from "@/common/const";
+import { IdentityAndAccessManagementModule } from "@/iam/iam.module";
+import { CommonModule } from "@/common/common.module";
+
 @Module({
   imports: [
+    CommonModule,
+    IdentityAndAccessManagementModule,
     BullModule.registerQueue({
       name: Keys.notification,
       connection: {

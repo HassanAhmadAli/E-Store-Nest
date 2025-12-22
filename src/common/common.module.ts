@@ -3,6 +3,7 @@ import { APP_FILTER } from "@nestjs/core";
 import { ZodErrorFilter } from "./filter/zod-error.filter";
 import { HttpExceptionFilter } from "./filter/http-exception.filter";
 import { MulterModule } from "@nestjs/platform-express";
+import { CachingService } from "./caching/caching.service";
 @Global()
 @Module({
   imports: [
@@ -10,8 +11,9 @@ import { MulterModule } from "@nestjs/platform-express";
       dest: "./uploads",
     }),
   ],
-  exports: [MulterModule],
+  exports: [MulterModule, CachingService],
   providers: [
+    CachingService,
     {
       provide: APP_FILTER,
       useClass: ZodErrorFilter,
