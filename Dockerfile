@@ -5,9 +5,11 @@ ENV PATH="$PNPM_HOME:$PATH"
 ENV PORT=3000
 ENV IS_DOCKER=true
 RUN --mount=type=cache,target=/root/.npm,id=npm_cache \
+    --mount=type=cache,target=/pnpm,id=pnpm_cache \
     npm install -g pnpm &&\
     pnpm config set store-dir $PNPM_HOME &&\
-    pnpm config set prefer-offline
+    pnpm config set prefer-offline &&\
+    pnpm config set side-effects-cache
 
 FROM base AS builder
 WORKDIR /app
