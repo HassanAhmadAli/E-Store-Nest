@@ -26,7 +26,8 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev --name e-store",
     "db:studio": "prisma studio",
-    "debug:circular-dependency": "pnpm run build && madge dist/main.js --circular"
+    "debug:circular-dependency": "pnpm run build && madge dist/main.js --circular",
+    "prepare": "husky && husky install"
   },
   "dependencies": {
     "@faker-js/faker": "^10.1.0",
@@ -104,6 +105,8 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
     "globals": "^16.5.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
     "madge": "^8.0.0",
     "prettier": "^3.7.4",
     "prisma": "^7.2.0",
@@ -121,5 +124,12 @@
   },
   "optionalDependencies": {
     "prisma-zod-generator": "^2.1.2"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,css,md,json}": [
+      "prettier --write",
+      "git add"
+    ],
+    "*.js": "eslint --cache --fix"
   }
 }

@@ -4,6 +4,7 @@ import { ConfigService } from "@nestjs/config";
 import { EnvVariables } from "@/common/schema/env";
 import { env } from "./common/env";
 import { RedisIoAdapter } from "@/socketio/socketio";
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     snapshot: env!.ENABLE_Devtools,
