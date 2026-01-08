@@ -18,5 +18,4 @@ async function bootstrap() {
   app.enableShutdownHooks();
   await app.listen(config.getOrThrow("PORT", { infer: true }));
 }
-
 void bootstrap();
