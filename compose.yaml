@@ -17,6 +17,10 @@ services:
       dockerfile: Dockerfile
     expose:
       - "3000"
+    volumes:
+      - ./backups:/app/backups
+      - ./uploads:/app/uploads
+      - ./errors.log:/app/errors.log
     env_file:
       - .docker.env
     depends_on:
@@ -29,8 +33,14 @@ services:
       dockerfile: Dockerfile
     expose:
       - "3000"
+    volumes:
+      - ./backups:/app/backups
+      - ./uploads:/app/uploads
+      - ./errors.log:/app/errors.log
     env_file:
       - .docker.env
+    environment:
+      - ENABLE_CRON_JOBS=false
     depends_on:
       - postgres_db
       - redis_db
@@ -41,8 +51,14 @@ services:
       dockerfile: Dockerfile
     expose:
       - "3000"
+    volumes:
+      - ./backups:/app/backups
+      - ./uploads:/app/uploads
+      - ./errors.log:/app/errors.log
     env_file:
       - .docker.env
+    environment:
+      - ENABLE_CRON_JOBS=false
     depends_on:
       - postgres_db
       - redis_db

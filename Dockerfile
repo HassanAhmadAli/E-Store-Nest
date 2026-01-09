@@ -1,9 +1,13 @@
 FROM node:alpine AS base
+RUN apk add --no-cache --repository=http://dl-cdn.alpinelinux.org/alpine/edge/main postgresql18-client=18.1-r0
 WORKDIR /app
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 ENV PORT=3000
 ENV IS_DOCKER=true
+ENV HUSKY_SKIP_INSTALL=true
+ENV HUSKY=0
+
 RUN --mount=type=cache,target=/root/.npm,id=npm_cache \
     --mount=type=cache,target=/pnpm,id=pnpm_cache \
     npm install -g pnpm &&\
@@ -27,6 +31,7 @@ COPY --from=builder /app/package.json /app/pnpm-lock.yaml /app/pnpm-workspace.ya
 RUN --mount=type=cache,target=/pnpm,id=pnpm_cache \
     pnpm install -P --frozen-lockfile
 COPY --from=builder /app/.env /app/dist/ ./dist/
-
+RUN mkdir -p /app/uploads && chown -R node:node /app/uploads
 CMD ["pnpm", "run", "start:prod"]
+USER node
 EXPOSE 3000

@@ -36,3 +36,5 @@ README.md
 public/
 dist/*
 nginx.conf
+uploads/
+backups/

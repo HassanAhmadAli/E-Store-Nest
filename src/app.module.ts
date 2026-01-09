@@ -22,6 +22,7 @@ import { AttachmentModule } from "./attachment/attachment.module";
 import { ScheduleModule } from "@nestjs/schedule";
 import { BullModule } from "@nestjs/bullmq";
 import { CachingService } from "./common/caching/caching.service";
+import { BackupModule } from "./backup/backup.module";
 @Module({
   imports: [
     BullModule.forRoot({
@@ -70,6 +71,7 @@ import { CachingService } from "./common/caching/caching.service";
     DepartmentModule,
     CommentModule,
     AttachmentModule,
+    BackupModule,
   ],
   controllers: [],
   providers: [
