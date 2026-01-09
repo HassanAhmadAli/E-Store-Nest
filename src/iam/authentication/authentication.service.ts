@@ -3,7 +3,6 @@ import { HashingService } from "@/iam/hashing/hashing.service";
 import { SignupDto } from "./dto/signinup.dto";
 import { SigninDto } from "./dto/signin.dto";
 import { JwtService, JwtSignOptions } from "@nestjs/jwt";
-import _ from "lodash";
 import { DurationType } from "@/common/schema/duration-schema";
 import { RefreshTokenDto } from "./dto/refresh-token.dto";
 import {
@@ -16,14 +15,16 @@ import {
 import { randomUUID, randomInt } from "node:crypto";
 import { RefreshTokenIdsStorage } from "./refresh-token-ids.storage";
 import { Prisma, PrismaService, User } from "@/prisma";
-import { ErrorMessages } from "@/common/const";
+import { ErrorMessages, Keys } from "@/common/const";
 import { ConfigService } from "@nestjs/config";
 import { EnvVariables } from "@/common/schema/env";
 import { SignoutDto } from "./dto/signout.dto";
-import { MailerService } from "@nestjs-modules/mailer";
 import { VerifyEmailDto } from "./dto/verify-email.dto";
 import { logger } from "@/utils";
 import { Cache } from "@nestjs/cache-manager";
+import { InjectQueue } from "@nestjs/bullmq";
+import { Queue } from "bullmq";
+import { Notification } from "@/notifications/notification.interface";
 @Injectable()
 export class AuthenticationService {
   constructor(
@@ -34,8 +35,8 @@ export class AuthenticationService {
     @Inject(RefreshTokenIdsStorage)
     private readonly refreshTokenIdsStorage: RefreshTokenIdsStorage,
     private readonly config: ConfigService<EnvVariables>,
-    private readonly mailerService: MailerService,
     private cacheManager: Cache,
+    @InjectQueue(Keys.notification) private readonly notificationQueue: Queue<Notification>,
   ) {
     this.NODE_ENV = this.config.getOrThrow("NODE_ENV", {
       infer: true,
@@ -53,7 +54,7 @@ export class AuthenticationService {
     const verificationCode = (this.NODE_ENV === "production" ? randomInt(10000000, 99999999) : 12345678).toString();
     const verificationCodeExpiresAt = new Date(Date.now() + 15 * 60 * 1000);
     console.log(signupDto);
-    await this.prisma.user.create({
+    const user = await this.prisma.user.create({
       data: {
         ...signupDto,
         password: encryptedPassword,
@@ -71,14 +72,14 @@ export class AuthenticationService {
       logger.debug({ message });
       return { message };
     }
-    void this.mailerService.sendMail({
-      to: signupDto.email,
-      subject: "Welcome! Verify your Email",
-      html: `
-          <h1>Welcome to Medi-Care App</h1>
-          <p>Your verification code is: <b>${verificationCode}</b></p>
-          <p>This code expires in 15 minutes.</p>
-        `,
+    await this.notificationQueue.add("send-notification", {
+      title: "Verification Code for the Complaint App",
+      //todo:
+      userId: user.id,
+      email: signupDto.email,
+      message: `Your verification code is: ${verificationCode} , it will expire in 15 minutes`,
+      type: "security",
+      createdAt: new Date(),
     });
     return {
       message: "User created. Please check your email for verification code.",
@@ -126,19 +127,21 @@ export class AuthenticationService {
   getKey(email: string) {
     return `password-mismatch-${email}`;
   }
-  async handlePasswordNotMatch({ email }: { email: string }) {
+  async handlePasswordNotMatch({ email, userId }: { email: string; userId: number }) {
     const key = this.getKey(email);
     const res: number | undefined = await this.cacheManager.get(key);
     if (res == undefined) {
       return await this.cacheManager.set(key, 1);
     }
     if (res < 3) return await this.cacheManager.set(key, res + 1);
-    await this.mailerService.sendMail({
-      to: email,
-      subject: "Welcome! Verify your Email",
-      html: `
-          You have signedin with the wrong password 3 times
-        `,
+    await this.notificationQueue.add("send-notification", {
+      title: "Security Alert!",
+      //todo:
+      userId,
+      email,
+      message: `You have signedin with the wrong password 3 times ${Date()}`,
+      type: "security",
+      createdAt: new Date(),
     });
     return;
   }
@@ -166,7 +169,8 @@ export class AuthenticationService {
     });
 
     if (!doesPasswordMatch) {
-      await this.handlePasswordNotMatch({ email });
+      const userId = user.id;
+      await this.handlePasswordNotMatch({ email, userId });
       throw new UnauthorizedException(ErrorMessages.PASSWORD_INCORRECT);
     }
     const signedData = {

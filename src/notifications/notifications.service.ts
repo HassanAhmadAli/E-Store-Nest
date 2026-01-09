@@ -2,9 +2,6 @@ import { Injectable } from "@nestjs/common";
 import { Namespace, Socket } from "socket.io";
 import { MessageBody } from "@nestjs/websockets";
 import { PrismaService } from "@/prisma";
-import { InjectQueue } from "@nestjs/bullmq";
-import { Keys } from "@/common/const";
-import { Queue } from "bullmq";
 import { JwtService } from "@nestjs/jwt";
 import { ActiveUserSchema } from "@/iam/authentication/dto/request-user.dto";
 import { CachingService } from "@/common/caching/caching.service";
@@ -16,7 +13,6 @@ export class NotificationsService {
 
   constructor(
     private readonly prismaService: PrismaService,
-    @InjectQueue(Keys.notification) private readonly notificationQueue: Queue,
     private readonly jwtService: JwtService,
     private readonly cachingService: CachingService,
     private readonly notificationConsumer: NotificationConsumer,

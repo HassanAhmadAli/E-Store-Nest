@@ -3,7 +3,7 @@ export interface Notification {
   userId: number;
   email: string | null;
   message: string;
-  type: "info" | "success" | "warning" | "error";
+  type: "info" | "success" | "warning" | "error" | "security";
   // read: boolean;
   createdAt: Date;
 }

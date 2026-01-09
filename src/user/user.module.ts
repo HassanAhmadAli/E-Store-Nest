@@ -1,10 +1,10 @@
 import { Module } from "@nestjs/common";
 import { UserService } from "./user.service";
 import { UserController } from "./user.controller";
-import { IdentityAndAccessManagementModule } from "@/iam/iam.module";
+import { HashingModule } from "@/iam/hashing/hashing.module";
 
 @Module({
-  imports: [IdentityAndAccessManagementModule],
+  imports: [HashingModule],
   controllers: [UserController],
   providers: [UserService],
 })

@@ -22,7 +22,7 @@ export class NotificationConsumer extends WorkerHost {
     const client = this.namespace.sockets.get(socketId);
     if (client != undefined) {
       client.emit("recieve-message", job.data);
-      return;
+      if (job.data.type !== "security") return;
     }
     if (job.data.email != null)
       await this.mailingService.sendMail({
