@@ -1,10 +1,11 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query } from "@nestjs/common";
 import { UserService } from "./user.service";
 import { UpdateProfileDto } from "./dto/update-profile.dto";
 import { ActiveUser } from "@/iam/decorators/ActiveUser.decorator";
 import { SetAllowedRoles } from "@/iam/authorization/decorators/roles.decorator";
 import { Role } from "@/prisma";
 import { CreateEmployeeDto } from "./dto/create-user.dto";
+import { PaginationQueryDto } from "@/common/dto/pagination-query.dto";
 @Controller("user")
 export class UserController {
   constructor(private readonly userService: UserService) {}
@@ -62,5 +63,15 @@ export class UserController {
   @Delete("delete/:id")
   async deleteAccount(@Param("id") userId: number) {
     return await this.userService.deleteAccount(userId);
+  }
+  @SetAllowedRoles(Role.Admin)
+  @Get("department/:id/employees")
+  async getEmployeesOfDepartment(
+    @Query()
+    paginationQueryDto: PaginationQueryDto,
+    @Param("id", ParseIntPipe)
+    departmentId: number,
+  ) {
+    return await this.userService.getEmployeesOfDepartment(departmentId, paginationQueryDto);
   }
 }
