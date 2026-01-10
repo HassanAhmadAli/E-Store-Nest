@@ -37,10 +37,13 @@ enum ComplaintPriority {
   High
 }
 
-enum AuditAction {
+enum ComplaintUpdateOperation {
   CREATE
+  EMPLOYEE_ASSIGNED
   UPDATE
+  ADD_ATTACHMENT
   DELETE
+  ARCHIVING
   STATUS_CHANGE
 }
 
@@ -61,9 +64,10 @@ model Department {
   complaints Complaint[]
 
   //
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
+  createdAt                DateTime                 @default(now())
+  updatedAt                DateTime                 @updatedAt
+  deletedAt                DateTime?
+  complaintUpdateHistories ComplaintUpdateHistory[]
 }
 
 model Complaint {
@@ -85,23 +89,44 @@ model Complaint {
   lockedById         Int?
 
   //
-  department       Department     @relation(fields: [departmentId], references: [id])
-  citizen          User           @relation("CitizenComplaints", fields: [citizenId], references: [id], onDelete: Restrict)
-  assignedEmployee User?          @relation("EmployeeComplaints", fields: [assignedEmployeeId], references: [id], onDelete: SetNull)
-  lockedBy         User?          @relation("UserLockedComplaints", fields: [lockedById], references: [id])
-  logs             ComplaintLog[]
+  department       Department        @relation(fields: [departmentId], references: [id])
+  citizen          User              @relation("CitizenComplaints", fields: [citizenId], references: [id], onDelete: Restrict)
+  assignedEmployee User?             @relation("EmployeeComplaints", fields: [assignedEmployeeId], references: [id], onDelete: SetNull)
+  lockedBy         User?             @relation("UserLockedComplaints", fields: [lockedById], references: [id])
+  logs             Complaint_audit[]
   attachments      Attachment[]
   comments         Comment[]
 
   //
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
+  createdAt                DateTime                 @default(now())
+  updatedAt                DateTime                 @updatedAt
+  deletedAt                DateTime?
+  complaintUpdateHistories ComplaintUpdateHistory[]
 
   @@index([citizenId])
   @@index([assignedEmployeeId])
   @@index([departmentId])
   @@index([status])
+}
+
+model ComplaintUpdateHistory {
+  id Int @id @default(autoincrement())
+
+  message       String
+  operationType ComplaintUpdateOperation
+
+  complaintId  String
+  departmentId Int
+  userId       Int
+
+  department Department @relation(fields: [departmentId], references: [id])
+  user       User       @relation(fields: [userId], references: [id])
+  complaint  Complaint  @relation(fields: [complaintId], references: [id])
+
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
+
+  @@index([departmentId])
 }
 
 model Comment {
@@ -128,28 +153,18 @@ model Comment {
   @@index([userId])
 }
 
-model ComplaintLog {
-  id      Int         @id @default(autoincrement())
-  //
-  action  AuditAction
-  changes Json
-  notes   String?
+// This model represents the "Complaint_audit" table
 
-  //
-  complaintId String
-  changedById Int
+model Complaint_audit {
+  id             Int       @id @default(autoincrement())
+  complaint_id   String
+  complaint      Complaint @relation(fields: [complaint_id], references: [id])
+  changedAt      DateTime  @default(now())
+  operation_type String
+  old_data       Json?
+  new_data       Json?
 
-  //
-  complaint Complaint @relation(fields: [complaintId], references: [id])
-  changedBy User      @relation(fields: [changedById], references: [id])
-
-  //
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
   deletedAt DateTime?
-
-  //
-  @@index([complaintId])
 }
 
 model Attachment {
@@ -206,18 +221,19 @@ model User {
   departmentId Int?
 
   //
-  department         Department?    @relation(fields: [departmentId], references: [id])
-  complaintsFiled    Complaint[]    @relation("CitizenComplaints")
-  complaintsAssigned Complaint[]    @relation("EmployeeComplaints")
-  complaints         Complaint[]    @relation("UserLockedComplaints")
-  logsCreated        ComplaintLog[] // Tracks who updated a complaint status
+  department         Department?  @relation(fields: [departmentId], references: [id])
+  complaintsFiled    Complaint[]  @relation("CitizenComplaints")
+  complaintsAssigned Complaint[]  @relation("EmployeeComplaints")
+  complaints         Complaint[]  @relation("UserLockedComplaints")
+  // logsCreated        ComplaintLog[] // Tracks who updated a complaint status
   comments           Comment[]
   attachments        Attachment[]
 
   //
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
+  createdAt                DateTime                 @default(now())
+  updatedAt                DateTime                 @updatedAt
+  deletedAt                DateTime?
+  complaintUpdateHistories ComplaintUpdateHistory[]
 
   //
   @@index([departmentId])

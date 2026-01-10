@@ -9,6 +9,8 @@ import {
   UseInterceptors,
   UploadedFile,
   Query,
+  ParseIntPipe,
+  Res,
 } from "@nestjs/common";
 import { ComplaintsService } from "./complaints.service";
 import { CreateComplaintDto } from "./dto/create-complaint.dto";
@@ -20,7 +22,7 @@ import { Role } from "@/prisma";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { FileMimeStandarizingPipe } from "@/attachment/pipe/file-mime-standarnizing.pipe";
 import { PaginationQueryDto } from "@/common/dto/pagination-query.dto";
-
+import { type Response } from "express";
 @Controller("complaints")
 export class ComplaintsController {
   constructor(private readonly complaintsService: ComplaintsService) {}
@@ -91,5 +93,39 @@ export class ComplaintsController {
   async archiveComplaint(@Param("id") complaintId: string, @ActiveUser("sub") employeeId: number) {
     return await this.complaintsService.archiveComplaint(complaintId, employeeId);
   }
-  //todo: show and trace complaints for citizen
+
+  @Get("history/complaint/:id")
+  async getComplaintHistory(
+    @Param("id") complaintId: string,
+    @ActiveUser() user: ActiveUserType,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { sub: userId, role } = user;
+    const csv = await this.complaintsService.getComplaintHistory(complaintId, userId, role);
+    res
+      .setHeader("Content-Type", "text/csv")
+      .setHeader(
+        "Content-Disposition",
+        `attachment; filename="complaint_${complaintId}_complaint_history_${Date.now()}.csv"`,
+      )
+      .send(csv);
+  }
+
+  @SetAllowedRoles(Role.Employee, Role.Admin, Role.Debugging)
+  @Get("history/department/:id")
+  async getDepartmentHistory(
+    @Param("id", ParseIntPipe) departmentId: number,
+    @ActiveUser() user: ActiveUserType,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { sub: userId, role } = user;
+    const csv = await this.complaintsService.getDepartmentHistory(departmentId, userId, role);
+    res
+      .setHeader("Content-Type", "text/csv")
+      .setHeader(
+        "Content-Disposition",
+        `attachment; filename="department_${departmentId}_complaints_history_${Date.now()}.csv"`,
+      )
+      .send(csv);
+  }
 }

@@ -1,14 +1,16 @@
-import { ConflictException, Injectable, UnauthorizedException } from "@nestjs/common";
+import { ConflictException, Injectable, StreamableFile, UnauthorizedException } from "@nestjs/common";
 import { CreateComplaintDto } from "./dto/create-complaint.dto";
-import { Prisma, PrismaService } from "@/prisma";
+import { ComplaintUpdateOperation, Prisma, PrismaService, Role } from "@/prisma";
 import { UpdateComplaintDto } from "./dto/update-complaint.dto";
-import { getEntriesOfTrue } from "@/utils";
+import { getEntriesOfTrue, getKeyOf } from "@/utils";
 import { PaginationQueryDto } from "@/common/dto/pagination-query.dto";
 import { Notification } from "@/notifications/notification.interface";
 import { CachingService } from "@/common/caching/caching.service";
 import { InjectQueue } from "@nestjs/bullmq";
 import { Keys } from "@/common/const";
 import { Queue } from "bullmq";
+// todo: move away from this package , it is abandoned
+import { parse } from "json2csv";
 @Injectable()
 export class ComplaintsService {
   constructor(
@@ -35,7 +37,6 @@ export class ComplaintsService {
       createdAt: new Date(),
     });
   }
-
   async raiseComplaint(createComplaintDto: CreateComplaintDto, citizenId: number) {
     const res = await this.prisma.complaint.create({
       data: {
@@ -56,6 +57,15 @@ export class ComplaintsService {
       message: "your complaint was successfully raised",
       email: null,
     });
+    await this.prisma.complaintUpdateHistory.create({
+      data: {
+        message: `Complaint created with status ${res.status}`,
+        operationType: ComplaintUpdateOperation.CREATE,
+        complaintId: res.id,
+        departmentId: createComplaintDto.departmentId,
+        userId: citizenId,
+      },
+    });
     return res;
   }
   async citizenAttachFileToComplaint(citizenId: number, email: string, complaintId: string, file: Express.Multer.File) {
@@ -68,7 +78,7 @@ export class ComplaintsService {
         size: file.size,
       },
     });
-    const attachment = await this.prisma.attachment.create({
+    const { id: attachmentId, ...attachment } = await this.prisma.attachment.create({
       data: {
         storedFileId: storedFile.id,
         complaintId,
@@ -77,6 +87,7 @@ export class ComplaintsService {
       select: {
         createdAt: true,
         storedFileId: true,
+        id: true,
       },
     });
     await this.notifyUser({
@@ -84,6 +95,21 @@ export class ComplaintsService {
       title: "attachment upload",
       message: "attachment was successfully uploaded",
       email,
+    });
+    //todo: make enum for operation type
+    //todo: save complaint to redis
+    const { departmentId } = await this.prisma.complaint.findUniqueOrThrow({
+      where: { id: complaintId },
+      select: { departmentId: true },
+    });
+    await this.prisma.complaintUpdateHistory.create({
+      data: {
+        message: `Citizen provided an attachment to complaint , with attachment id ${attachmentId}`,
+        operationType: ComplaintUpdateOperation.ADD_ATTACHMENT,
+        complaintId,
+        departmentId,
+        userId: citizenId,
+      },
     });
     return attachment;
   }
@@ -148,6 +174,7 @@ export class ComplaintsService {
       throw new ConflictException("Complaint is already Being processed by another employee");
     }
   }
+
   async assignComplaint(complaintId: string, employeeId: number) {
     let complaint = await this.getComplaintAndLockOrThrow({ complaintId, employeeId });
     try {
@@ -185,6 +212,16 @@ export class ComplaintsService {
         where: { id: complaintId },
         data: { lockedById: null, lockedAt: null },
       });
+      // todo: make enum for operation type
+      await this.prisma.complaintUpdateHistory.create({
+        data: {
+          message: `an employee was assigned to the complaint`,
+          operationType: ComplaintUpdateOperation.EMPLOYEE_ASSIGNED,
+          complaintId,
+          departmentId: complaint.departmentId,
+          userId: employeeId,
+        },
+      });
       return complaint;
     } catch (e) {
       await this.prisma.complaint.update({
@@ -219,10 +256,10 @@ export class ComplaintsService {
   async updateStatus(complaintId: string, employeeId: number, updateComplaintDto: UpdateComplaintDto) {
     return await this.prisma.$transaction(async (tx) => {
       const complaint = await this.prismaService.complaint.findForUpdate(tx, complaintId);
+      const oldStatus = complaint.status;
       if (complaint?.assignedEmployeeId !== employeeId) {
         throw new ConflictException("Employee does not have permissions on this complaint");
       }
-      //todo: set the logs
       const updatedComplaint = await tx.complaint.update({
         where: {
           id: complaintId,
@@ -240,6 +277,16 @@ export class ComplaintsService {
         title: "complaint status update",
         message: `the status of your complaint was updated to ${updateComplaintDto.status}`,
         email,
+      });
+      // todo: enum
+      await this.prisma.complaintUpdateHistory.create({
+        data: {
+          message: `An Emplyee Updated the status of the complaint from ${oldStatus} to ${complaint.status}`,
+          operationType: ComplaintUpdateOperation.UPDATE,
+          complaintId,
+          departmentId: complaint.departmentId,
+          userId: employeeId,
+        },
       });
       return updatedComplaint;
     });
@@ -269,7 +316,90 @@ export class ComplaintsService {
         message: "your complaint was archived by the assigned employee",
         email,
       });
+      // todo: enum
+      await this.prisma.complaintUpdateHistory.create({
+        data: {
+          message: `Complaint Archived by the assigned employee`,
+          operationType: ComplaintUpdateOperation.ARCHIVING,
+          complaintId: res.id,
+          departmentId: res.departmentId,
+          userId: employeeId,
+        },
+      });
       return res;
     });
+  }
+  async getComplaintHistory(complaintId: string, userId: number, role: Role) {
+    // todo:
+    const complaint = await this.prisma.complaint.findUniqueOrThrow({
+      where: {
+        id: complaintId,
+      },
+      select: {
+        departmentId: true,
+        citizenId: true,
+      },
+    });
+    switch (role) {
+      case Role.Citizen: {
+        if (complaint.citizenId === userId) {
+          break;
+        }
+        throw new ConflictException("the complaint was not submited by this citizin");
+      }
+      case Role.Employee: {
+        const emp = await this.prisma.user.findUniqueOrThrow({
+          where: { id: userId },
+          select: { departmentId: true },
+        });
+        if (emp.departmentId === complaint.departmentId) {
+          break;
+        }
+        throw new ConflictException("the complaint was not submited by this employee");
+      }
+      default:
+        break;
+    }
+    const res = await this.prisma.complaintUpdateHistory.findMany({
+      where: {
+        complaintId,
+      },
+      orderBy: {
+        createdAt: "asc",
+      },
+    });
+    const fields = getKeyOf(res[0]!);
+    // todo: move away from this package , it is abandoned
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+    return parse(res, { fields }) as string;
+  }
+  async getDepartmentHistory(departmentId: number, userId: number, role: Role) {
+    // todo:
+    switch (role) {
+      case Role.Employee: {
+        const emp = await this.prisma.user.findUniqueOrThrow({
+          where: { id: userId },
+          select: { departmentId: true },
+        });
+        if (emp.departmentId === departmentId) {
+          break;
+        }
+        throw new ConflictException("the complaint was not submited by this employee");
+      }
+      default:
+        break;
+    }
+    const res = await this.prisma.complaintUpdateHistory.findMany({
+      where: {
+        departmentId,
+      },
+      orderBy: {
+        createdAt: "asc",
+      },
+    });
+    const fields = getKeyOf(res[0]!);
+    // todo: move away from this package , it is abandoned
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+    return parse(res, { fields }) as string;
   }
 }
