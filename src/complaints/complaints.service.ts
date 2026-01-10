@@ -123,10 +123,35 @@ export class ComplaintsService {
       },
     });
   }
-
+  async getComplaintAndLockOrThrow({ complaintId, employeeId }: { complaintId: string; employeeId: number }) {
+    try {
+      const complaint = await this.prisma.complaint.update({
+        where: {
+          id: complaintId,
+          lockedAt: null,
+          lockedById: null,
+        },
+        data: {
+          lockedById: employeeId,
+          lockedAt: new Date(),
+        },
+      });
+      return complaint;
+    } catch {
+      const complaint = await this.prisma.complaint.findUnique({
+        where: { id: complaintId },
+      });
+      if (complaint == undefined) {
+        throw new ConflictException("Complaint does not exist");
+      }
+      // todo: unlock if necessary
+      throw new ConflictException("Complaint is already Being processed by another employee");
+    }
+  }
   async assignComplaint(complaintId: string, employeeId: number) {
-    return this.prisma.$transaction(async (tx) => {
-      const employee = await tx.user.findUniqueOrThrow({
+    let complaint = await this.getComplaintAndLockOrThrow({ complaintId, employeeId });
+    try {
+      const employee = await this.prisma.user.findUnique({
         where: {
           id: employeeId,
           departmentId: { not: null },
@@ -135,11 +160,13 @@ export class ComplaintsService {
           departmentId: true,
         },
       });
-      const complaint = await this.prismaService.complaint.findForUpdate(tx, complaintId);
+      if (employee == undefined) {
+        throw new UnauthorizedException("Employee does not belong to any department");
+      }
       if (complaint.departmentId != employee.departmentId) {
         throw new UnauthorizedException("You does not belone to the same department of this complaint");
       }
-      const res = await tx.complaint.update({
+      complaint = await this.prisma.complaint.update({
         where: {
           id: complaintId,
         },
@@ -147,15 +174,25 @@ export class ComplaintsService {
           assignedEmployeeId: employeeId,
         },
       });
-      const { email } = await this.cachingService.users.getCachedUserData(res.citizenId);
+      const { email } = await this.cachingService.users.getCachedUserData(complaint.citizenId);
       await this.notifyUser({
-        userId: res.citizenId,
+        userId: complaint.citizenId,
         title: "complaint update",
         message: "an employee was assigned to your complaint, a response will be given soon",
         email,
       });
-      return res;
-    });
+      await this.prisma.complaint.update({
+        where: { id: complaintId },
+        data: { lockedById: null, lockedAt: null },
+      });
+      return complaint;
+    } catch (e) {
+      await this.prisma.complaint.update({
+        where: { id: complaintId },
+        data: { lockedById: null, lockedAt: null },
+      });
+      throw e;
+    }
   }
   async getEmployeeComplaints(employeeId: number) {
     return await this.prisma.complaint.findMany({
